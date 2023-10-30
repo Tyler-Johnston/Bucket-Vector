@@ -115,15 +115,10 @@ namespace usu
 
             private:
                 std::shared_ptr<T[]> m_data;
-                std::uint16_t m_size;
+                size_type m_size;
         };
 
         vector();
-        vector(resize_type resize);
-        vector(size_type size);
-        vector(size_type size, resize_type resize);
-        vector(std::initializer_list<T> list);
-        vector(std::initializer_list<T> list, resize_type resize);
 
         reference operator[](size_type index);
         void add(T value);
@@ -138,58 +133,29 @@ namespace usu
         iterator end() { return iterator(m_size, m_data); }
 
       private:
-        static const size_type DEFAULT_INITIAL_CAPACITY = 10;
+        size_type DEFAULT_BUCKET_CAPACITY = 10;
         std::list<std::shared_ptr<Bucket>> buckets;
-        size_type m_size;
-        size_type m_capacity{ DEFAULT_INITIAL_CAPACITY };
+        size_type m_size; // the number of elements in the vector (NOT the number of buckets)
+        size_type m_capacity; // the capacity of each bucket
     };
 
     template <typename T>
     vector<T>::vector() :
-        vector(0, DEFAULT_RESIZE)
+        m_size(0),
+        m_capacity(DEFAULT_BUCKET_CAPACITY)
     {
+        auto initialBucket = std::make_shared<Bucket>(m_capacity);
+        buckets.push_back(initialBucket);
     }
 
-    template <typename T>
-    vector<T>::vector(resize_type resize) :
-        vector(0, resize)
-    {
-    }
-
-    template <typename T>
-    vector<T>::vector(size_type size) :
-        vector(size, DEFAULT_RESIZE)
-    {
-    }
-
-    template <typename T>
-    vector<T>::vector(size_type size, resize_type resize) :
-        m_size(size),
-        m_funcResize(resize)
-    {
-        if (m_size > m_capacity)
-        {
-            m_capacity = m_funcResize(m_size);
-        }
-
-        m_data = std::make_shared<T[]>(m_capacity);
-    }
-
-    template <typename T>
-    vector<T>::vector(std::initializer_list<T> list) :
-        vector<T>(list, DEFAULT_RESIZE)
-    {
-    }
-
-    template <typename T>
-    vector<T>::vector(std::initializer_list<T> list, resize_type resize) :
-        vector<T>(resize)
-    {
-        for (auto&& value : list)
-        {
-            add(value);
-        }
-    }
+    // template <typename T>
+    // vector<T>::vector(size_type capacity) :
+    //     m_size(0),
+    //     m_capacity(capacity)
+    // {
+    //     auto initialBucket = std::make_shared<Bucket>(m_capacity);
+    //     buckets.push_back(initialBucket);
+    // }
 
     template <typename T>
     typename vector<T>::reference vector<T>::operator[](size_type index)
@@ -199,7 +165,17 @@ namespace usu
             throw std::range_error("Index out of bounds");
         }
 
-        return m_data[index];
+        size_type count = 0;
+        for (auto& bucket : buckets) {
+            size_type bucketSize = bucket->getSize();
+            if (index < count + bucketSize) {
+                // the right bucket was found, return the element at that index
+                return (*bucket->getData())[index - count];
+            }
+            count += bucketSize;
+        }
+
+        throw std::range_error("Index out of bounds");  // This should not happen
     }
 
     template <typename T>
@@ -211,7 +187,71 @@ namespace usu
     template <typename T>
     void vector<T>::insert(size_type index, T value)
     {
+        if (index > m_size)
+        {
+            throw std::range_error("Invalid insert index");
+        }
 
+        // loop through the list of buckets
+        size_type count = 0;
+        for (auto it = buckets.begin(); it != buckets.end(); ++it)
+        {
+            auto& targetBucket = *it;
+            size_type bucketSize = targetBucket->getSize();
+
+            // find the correct bucket in the list of buckets
+            if (index < count + bucketSize)
+            {
+                size_type innerIndex = index - count;
+                if (bucketSize < m_capacity)
+                {
+                    for (size_type i = bucketSize; i > innerIndex; i--)
+                    {
+                        targetBucket->setValueAtIndex(i, (*targetBucket->getData())[i - 1]);
+                    }
+                    targetBucket->setValueAtIndex(innerIndex, value);
+                    targetBucket->setSize(bucketSize + 1);
+                }
+                else  // the bucket is full so do the splitting
+                {
+                    auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
+                    auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
+
+                    size_type mid = m_capacity / 2;
+                    bool insertInFirstHalf = innerIndex < mid;
+                    if (insertInFirstHalf)
+                    {
+                        std::copy(targetBucket->getData().get(), targetBucket->getData().get() + innerIndex, firstHalfBucket->getData().get());
+                        firstHalfBucket->setValueAtIndex(innerIndex, value);
+                        std::copy(targetBucket->getData().get() + innerIndex, targetBucket->getData().get() + mid, firstHalfBucket->getData().get() + innerIndex + 1);
+                        std::copy(targetBucket->getData().get() + mid, targetBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
+
+                        // set the sizes
+                        firstHalfBucket->setSize(mid + 1);
+                        secondHalfBucket->setSize(mid);
+                    }
+                    else
+                    {
+                        std::copy(targetBucket->getData().get(), targetBucket->getData().get() + mid, firstHalfBucket->getData().get());
+                        std::copy(targetBucket->getData().get() + mid, targetBucket->getData().get() + innerIndex, secondHalfBucket->getData().get());
+                        secondHalfBucket->setValueAtIndex(innerIndex - mid, value);
+                        std::copy(targetBucket->getData().get() + innerIndex, targetBucket->getData().get() + m_capacity, secondHalfBucket->getData().get() + innerIndex - mid + 1);
+
+                        // set the sizes    
+                        firstHalfBucket->setSize(mid);
+                        secondHalfBucket->setSize(mid + 1);
+                    }
+
+                    // modify the list of buckets
+                    it = buckets.erase(it);
+                    it = buckets.insert(it, secondHalfBucket);
+                    it = buckets.insert(it, firstHalfBucket);
+                }
+                m_size++;
+                return; // break out of the loop
+            }
+            count += bucketSize;
+        }
     }
 
     template <typename T>
