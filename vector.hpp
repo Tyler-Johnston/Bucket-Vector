@@ -181,8 +181,31 @@ namespace usu
     template <typename T>
     void vector<T>::add(T value)
     {
+        auto& lastBucket = buckets.back();
+        if (lastBucket->getSize() == m_capacity)
+        {
+            auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
+            auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
 
+            std::copy(lastBucket->getData().get(), lastBucket->getData().get() + m_capacity / 2, firstHalfBucket->getData().get());
+            std::copy(lastBucket->getData().get() + m_capacity / 2, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
+
+            firstHalfBucket->setSize(m_capacity / 2);
+            secondHalfBucket->setSize(m_capacity / 2);
+
+            buckets.pop_back();
+            buckets.push_back(firstHalfBucket);
+            buckets.push_back(secondHalfBucket);
+
+            lastBucket = secondHalfBucket;
+        }
+
+        size_type currentSize = lastBucket->getSize();
+        lastBucket->setValueAtIndex(currentSize, value);
+        lastBucket->setSize(currentSize + 1);
+        m_size++;
     }
+
 
     template <typename T>
     void vector<T>::insert(size_type index, T value)
