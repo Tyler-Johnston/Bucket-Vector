@@ -4,6 +4,7 @@
 #include <string>
 #include <utility> // std::pair
 #include <vector>
+#include <iostream>
 
 // Set this to false to remove the debugging cout statements
 constexpr bool DEBUG_PRINT = true;
@@ -26,10 +27,10 @@ TEST(Buckets, Adding)
     usu::vector<int> vec;
     vec.add(1);
     EXPECT_EQ(vec.size(), 1);
-    // EXPECT_EQ(vec[0], 1);
+    EXPECT_EQ(vec[0], 1);
     vec.add(2);
     EXPECT_EQ(vec.size(), 2);
-    // EXPECT_EQ(vec[1], 2);
+    EXPECT_EQ(vec[1], 2);
 }
 
 TEST(Buckets, Inserting)
@@ -39,30 +40,30 @@ TEST(Buckets, Inserting)
     vec.add(3);
     vec.insert(1, 2);  // inserting in between
     EXPECT_EQ(vec.size(), 3);
-    // EXPECT_EQ(vec[0], 1);
-    // EXPECT_EQ(vec[1], 2);
-    // EXPECT_EQ(vec[2], 3);
+    EXPECT_EQ(vec[0], 1);
+    EXPECT_EQ(vec[1], 2);
+    EXPECT_EQ(vec[2], 3);
 }
 
-// TEST(Buckets, Splitting)
-// {
-//     usu::vector<int> vec;
-//     for (int i = 0; i < 10; ++i)  // fill the first bucket
-//     {
-//         vec.add(i);
-//     }
-//     EXPECT_EQ(vec.size(), 10);
+TEST(Buckets, Splitting)
+{
+    usu::vector<int> vec;
+    for (int i = 0; i < 10; ++i)  // fill the first bucket
+    {
+        vec.add(i);
+    }
+    EXPECT_EQ(vec.size(), 10);
     
-//     // At this point, if your split logic is correct, adding one more element should cause a split
-//     vec.add(10);
-    
-//     EXPECT_EQ(vec.size(), 11);
-//     EXPECT_EQ(vec[10], 10); // The added element should be at the end
-
-//     // Optionally, if you've exposed a way to see the number of buckets, you can check that as well
-//     // e.g., 
-//     // EXPECT_EQ(vec.numBuckets(), 2);  
-// }
+    // adding one extra element should cause a split
+    vec.add(10);
+    // the size of the vector should be 11, and the 10th element should be 10
+    EXPECT_EQ(vec.size(), 11);
+    for (int i=0; i<vec.size(); i++)
+    {
+        std::cout << "i: " << i << " => " << vec[i] << std::endl;
+    }
+    EXPECT_EQ(vec[10], 10);
+}
 
 
 
