@@ -104,11 +104,11 @@ namespace usu
                 {}
                 const std::shared_ptr<T[]>& getData() const { return m_data; }
                 std::uint16_t getSize() const { return m_size; }
-                void setSize(std::uint16_t newSize) { m_size = newSize }
+                void setSize(std::uint16_t newSize) { m_size = newSize; }
                 void setValueAtIndex(std::uint16_t index, const T& value) 
                 {
-                    if (index >= m_size) {
-                        throw std::out_of_range("Index out of bounds");
+                    if (index > m_size) {
+                        throw std::out_of_range("Index out of bounds in the SetValueAtIndex");
                     }
                     m_data[index] = value;
                 }
@@ -129,8 +129,19 @@ namespace usu
         size_type size() { return m_size; }
         size_type capacity() { return m_capacity; }
 
-        iterator begin() { return iterator(m_data); }
-        iterator end() { return iterator(m_size, m_data); }
+        // TEMPORARY SOLUTION THAT DOES NOT HANDLE MULTI-BUCKETS
+        iterator begin() 
+        { 
+            if (buckets.empty()) return iterator(0, nullptr); // Handle empty vector
+            return iterator(0, buckets.front()->getData()); 
+        }
+
+        iterator end() 
+        { 
+            if (buckets.empty()) return iterator(0, nullptr); // Handle empty vector
+            return iterator(buckets.back()->getSize(), buckets.back()->getData()); 
+        }
+
 
       private:
         size_type DEFAULT_BUCKET_CAPACITY = 10;
@@ -162,7 +173,7 @@ namespace usu
     {
         if (index >= m_size)
         {
-            throw std::range_error("Index out of bounds");
+            throw std::range_error("Index out of bounds in the operator[] section");
         }
 
         size_type count = 0;
@@ -170,12 +181,12 @@ namespace usu
             size_type bucketSize = bucket->getSize();
             if (index < count + bucketSize) {
                 // the right bucket was found, return the element at that index
-                return (*bucket->getData())[index - count];
+                return bucket->getData()[index - count];
             }
             count += bucketSize;
         }
 
-        throw std::range_error("Index out of bounds");  // This should not happen
+        throw std::range_error("Index out of bounds in the 2nd part of the operator[] section");  // this should not happen
     }
 
     template <typename T>
@@ -206,7 +217,6 @@ namespace usu
         m_size++;
     }
 
-
     template <typename T>
     void vector<T>::insert(size_type index, T value)
     {
@@ -230,7 +240,7 @@ namespace usu
                 {
                     for (size_type i = bucketSize; i > innerIndex; i--)
                     {
-                        targetBucket->setValueAtIndex(i, (*targetBucket->getData())[i - 1]);
+                        targetBucket->setValueAtIndex(i, targetBucket->getData()[i - 1]);
                     }
                     targetBucket->setValueAtIndex(innerIndex, value);
                     targetBucket->setSize(bucketSize + 1);
@@ -286,7 +296,7 @@ namespace usu
     template <typename T>
     void vector<T>::clear()
     {
-        buckets.clear()
+        buckets.clear();
     }
 
     // Prefix ++i
