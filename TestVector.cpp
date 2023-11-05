@@ -45,7 +45,7 @@ TEST(Buckets, Inserting)
     EXPECT_EQ(vec[2], 3);
 }
 
-TEST(Buckets, Splitting)
+TEST(Buckets, SplittingFromAdd)
 {
     usu::vector<int> vec;
     for (int i = 0; i < 10; ++i)  // fill the first bucket
@@ -56,15 +56,33 @@ TEST(Buckets, Splitting)
     
     // adding one extra element should cause a split
     vec.add(10);
+
     // the size of the vector should be 11, and the 10th element should be 10
     EXPECT_EQ(vec.size(), 11);
+
+    // ensure all elements are still correct, including new element that caused the split
     for (int i=0; i<vec.size(); i++)
     {
-        std::cout << "i: " << i << " => " << vec[i] << std::endl;
+        EXPECT_EQ(vec[i], i);
     }
-    EXPECT_EQ(vec[10], 10);
 }
 
+TEST(Buckets, SplittingFromInsert)
+{
+    usu::vector<int> vec;
+    for (int i = 0; i < 10; ++i)  // fill the first bucket
+    {
+        vec.add(i);
+    }
+    EXPECT_EQ(vec.size(), 10);
+    
+    vec.insert(1,99);  // newVec: [0, 1, 99, 3, 4, 5, 6, 7, 8, 9]
+    EXPECT_EQ(vec.size(), 11);
+    EXPECT_EQ(vec[0], 0);
+    EXPECT_EQ(vec[1], 1);
+    EXPECT_EQ(vec[2], 99);
+    EXPECT_EQ(vec[3], 3);
+}
 
 
 // TEST(Constructor, SizeCapacity)

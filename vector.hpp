@@ -189,34 +189,6 @@ namespace usu
         throw std::range_error("Index out of bounds in the 2nd part of the operator[] section");  // this should not happen
     }
 
-    // template <typename T>
-    // void vector<T>::add(T value)
-    // {
-    //     auto& lastBucket = buckets.back();
-    //     if (lastBucket->getSize() == m_capacity)
-    //     {
-    //         auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
-    //         auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
-
-    //         std::copy(lastBucket->getData().get(), lastBucket->getData().get() + m_capacity / 2, firstHalfBucket->getData().get());
-    //         std::copy(lastBucket->getData().get() + m_capacity / 2, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
-
-    //         firstHalfBucket->setSize(m_capacity / 2);
-    //         secondHalfBucket->setSize(m_capacity / 2);
-    //         // secondHalfBucket->setSize((m_capacity / 2) - 1); // leave one spot empty for the new value
-
-    //         buckets.pop_back();
-    //         buckets.push_back(firstHalfBucket);
-    //         buckets.push_back(secondHalfBucket);
-
-    //         lastBucket = secondHalfBucket;
-    //     }
-
-    //     size_type currentSize = lastBucket->getSize();
-    //     lastBucket->setValueAtIndex(currentSize, value);
-    //     lastBucket->setSize(currentSize + 1);
-    //     m_size++;
-    // }
     template <typename T>
     void vector<T>::add(T value)
     {
@@ -226,26 +198,25 @@ namespace usu
             auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
             auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
 
-            // Copy first half to firstHalfBucket
+            // copy first half to firstHalfBucket
             std::copy(lastBucket->getData().get(), lastBucket->getData().get() + m_capacity / 2, firstHalfBucket->getData().get());
 
-            // Copy second half to secondHalfBucket
+            // copy second half to secondHalfBucket
             std::copy(lastBucket->getData().get() + m_capacity / 2, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
 
-            // Adjust the sizes
+            // adjust the sizes
             firstHalfBucket->setSize(m_capacity / 2);
-            
-            // For the second bucket, it initially has half the elements. We will add one more element next.
+            // the second half will have one additional item in it
             secondHalfBucket->setSize((m_capacity / 2) + 1);
             
-            // Remove the old lastBucket
+            // remove the old lastBucket
             buckets.pop_back();
             
-            // Add the two new buckets
+            // add the two new buckets
             buckets.push_back(firstHalfBucket);
             buckets.push_back(secondHalfBucket);
 
-            // Add the new value to the end of the secondHalfBucket
+            // add the new value to the end of the secondHalfBucket
             secondHalfBucket->setValueAtIndex(m_capacity / 2, value);
         }
         else
