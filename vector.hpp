@@ -72,6 +72,7 @@ namespace usu
           public:
             using iterator_category = std::bidirectional_iterator_tag;
             using difference_type = std::size_t;
+            using bucketIterator = typename std::list<std::shared_ptr<Bucket>>::iterator;
 
             iterator() :
                 iterator(nullptr) // DefaultConstructable
@@ -82,14 +83,19 @@ namespace usu
                 m_bucketIt(obj.m_bucketIt)
             {
             }
-            iterator(pointer data) :
-                m_pos(0),
-                m_bucketIt(data)
-            {
-            }
-            iterator(size_type pos, pointer data) :
+            // iterator(pointer data) :
+            //     m_pos(0),
+            //     m_bucketIt(data)
+            // {
+            // }
+            // iterator(size_type pos, pointer data) :
+            //     m_pos(pos),
+            //     m_bucketIt(data)
+            // {
+            // }
+            iterator(bucketIterator bucketIt, size_type pos) :
                 m_pos(pos),
-                m_bucketIt(data)
+                m_bucketIt(bucketIt)
             {
             }
 
@@ -108,18 +114,18 @@ namespace usu
             iterator operator--();
             iterator operator--(int);
 
-            bool operator==(const iterator& rhs)
+            bool operator==(const iterator& rhs) const
             {
                 return m_pos == rhs.m_pos && m_bucketIt == rhs.m_bucketIt;
             }
 
-            bool operator!=(const iterator& rhs)
+            bool operator!=(const iterator& rhs) const
             {
                 return !operator==(rhs);
             }
 
           private:
-              std::list<std::shared_ptr<Bucket>>::iterator m_bucketIt; // iterator to the current bucket
+              typename std::list<std::shared_ptr<Bucket>>::iterator m_bucketIt; // iterator to the current bucket
               size_type m_pos; // index within the current bucket
         };
 
@@ -141,9 +147,8 @@ namespace usu
 
         iterator end() 
         {
-            return buckets.empty() ? iterator(buckets.end(), 0) : iterator(std::prev(buckets.end()), buckets.back()->getSize());
+            return buckets.empty() ? iterator(buckets.end(), 0) : iterator(std::prev(buckets.end()), std::prev(buckets.end())->get()->getSize());
         }
-
 
       private:
         size_type DEFAULT_BUCKET_CAPACITY = 10;
