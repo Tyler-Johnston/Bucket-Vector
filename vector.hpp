@@ -43,58 +43,6 @@ namespace usu
         using value_type = T;
         using resize_type = std::function<size_type(size_type)>;
 
-        class iterator
-        {
-          public:
-            using iterator_category = std::bidirectional_iterator_tag;
-            using difference_type = std::size_t;
-
-            iterator() :
-                iterator(nullptr) // DefaultConstructable
-            {
-            }
-            iterator(const iterator& obj) :
-                m_pos(obj.m_pos),
-                m_data(obj.m_data)
-            {
-            }
-            iterator(pointer data) :
-                m_pos(0),
-                m_data(data)
-            {
-            }
-            iterator(size_type pos, pointer data) :
-                m_pos(pos),
-                m_data(data)
-            {
-            }
-
-            reference operator*() { return m_data[m_pos]; }
-            auto* operator->()
-            {
-                return &(m_data[m_pos]);
-            }
-
-            iterator operator++();
-            iterator operator++(int);
-            iterator operator--();
-            iterator operator--(int);
-
-            bool operator==(const iterator& rhs)
-            {
-                return m_pos == rhs.m_pos && m_data == rhs.m_data;
-            }
-
-            bool operator!=(const iterator& rhs)
-            {
-                return !operator==(rhs);
-            }
-
-          private:
-            size_type m_pos;
-            pointer m_data;
-        };
-
         class Bucket
         {
             public:
@@ -107,7 +55,8 @@ namespace usu
                 void setSize(std::uint16_t newSize) { m_size = newSize; }
                 void setValueAtIndex(std::uint16_t index, const T& value) 
                 {
-                    if (index > m_size) {
+                    if (index > m_size) 
+                    {
                         throw std::out_of_range("Index out of bounds in the SetValueAtIndex");
                     }
                     m_data[index] = value;
@@ -116,6 +65,62 @@ namespace usu
             private:
                 std::shared_ptr<T[]> m_data;
                 size_type m_size;
+        };
+
+        class iterator
+        {
+          public:
+            using iterator_category = std::bidirectional_iterator_tag;
+            using difference_type = std::size_t;
+
+            iterator() :
+                iterator(nullptr) // DefaultConstructable
+            {
+            }
+            iterator(const iterator& obj) :
+                m_pos(obj.m_pos),
+                m_bucketIt(obj.m_bucketIt)
+            {
+            }
+            iterator(pointer data) :
+                m_pos(0),
+                m_bucketIt(data)
+            {
+            }
+            iterator(size_type pos, pointer data) :
+                m_pos(pos),
+                m_bucketIt(data)
+            {
+            }
+
+            reference operator*() 
+            { 
+                return (*m_bucketIt)->getData().get()[m_pos];
+            }
+
+            auto* operator->()
+            {
+                return &(m_bucketIt[m_pos]);
+            }
+
+            iterator operator++();
+            iterator operator++(int);
+            iterator operator--();
+            iterator operator--(int);
+
+            bool operator==(const iterator& rhs)
+            {
+                return m_pos == rhs.m_pos && m_bucketIt == rhs.m_bucketIt;
+            }
+
+            bool operator!=(const iterator& rhs)
+            {
+                return !operator==(rhs);
+            }
+
+          private:
+              std::list<std::shared_ptr<Bucket>>::iterator m_bucketIt; // iterator to the current bucket
+              size_type m_pos; // index within the current bucket
         };
 
         vector();
@@ -129,17 +134,14 @@ namespace usu
         size_type size() { return m_size; }
         size_type capacity() { return m_capacity; }
 
-        // TEMPORARY SOLUTION THAT DOES NOT HANDLE MULTI-BUCKETS
         iterator begin() 
-        { 
-            if (buckets.empty()) return iterator(0, nullptr); // Handle empty vector
-            return iterator(0, buckets.front()->getData()); 
+        {
+            return buckets.empty() ? iterator(buckets.end(), 0) : iterator(buckets.begin(), 0);
         }
 
         iterator end() 
-        { 
-            if (buckets.empty()) return iterator(0, nullptr); // Handle empty vector
-            return iterator(buckets.back()->getSize(), buckets.back()->getData()); 
+        {
+            return buckets.empty() ? iterator(buckets.end(), 0) : iterator(std::prev(buckets.end()), buckets.back()->getSize());
         }
 
 
@@ -179,7 +181,8 @@ namespace usu
         size_type count = 0;
         for (auto& bucket : buckets) {
             size_type bucketSize = bucket->getSize();
-            if (index < count + bucketSize) {
+            if (index < count + bucketSize) 
+            {
                 // the right bucket was found, return the element at that index
                 return bucket->getData()[index - count];
             }
@@ -227,7 +230,6 @@ namespace usu
         }
         m_size++;
     }
-
 
     template <typename T>
     void vector<T>::insert(size_type index, T value)
@@ -299,6 +301,7 @@ namespace usu
         }
     }
 
+    //TODO: finish this
     template <typename T>
     void vector<T>::remove(size_type index)
     {
@@ -311,38 +314,58 @@ namespace usu
         buckets.clear();
     }
 
+    // TODO: CHAT-GPT PROVIDED PRE/POST FIX OPERATORS, GO BACK AND REVIEW THIS
+
     // Prefix ++i
     template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator++()
+    typename vector<T>::iterator vector<T>::iterator::operator++() 
     {
-        m_pos++;
+        // Move to the next element within the bucket
+        if (++m_pos >= (*m_bucketIt)->getSize()) {
+            // Move to the next bucket if we've reached the end of the current one
+            ++m_bucketIt;
+            m_pos = 0; // Reset position to the start of the new bucket
+        }
         return *this;
     }
 
     // Postfix i++
     template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator++(int)
+    typename vector<T>::iterator vector<T>::iterator::operator++(int) 
     {
-        iterator i = *this;
-        m_pos++;
-        return i;
+        iterator tmp = *this;
+        ++(*this); // Use the prefix increment to move to the next element
+        return tmp;
     }
 
     // Prefix --i
     template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator--()
+    typename vector<T>::iterator vector<T>::iterator::operator--() 
     {
-        m_pos--;
+        if (m_pos == 0 && m_bucketIt != m_bucketIt.begin()) 
+        {
+            // If at the beginning of a bucket, move to the previous bucket
+            --m_bucketIt;
+            m_pos = (*m_bucketIt)->getSize() - 1; // Last element of the previous bucket
+        } 
+        else if (m_pos > 0) 
+        {
+            // If not at the beginning, just move back one element within the bucket
+            --m_pos;
+        }
+        // Edge case: if m_pos is already 0 and m_bucketIt is at the beginning,
+        // this operation would lead to an invalid state and should be handled accordingly.
         return *this;
     }
 
     // Postfix i--
     template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator--(int)
+    typename vector<T>::iterator vector<T>::iterator::operator--(int) 
     {
-        iterator i = *this;
-        m_pos--;
-        return i;
+        iterator tmp = *this;
+        --(*this); // Use the prefix decrement to move to the previous element
+        return tmp;
     }
+
 
 } // namespace usu
