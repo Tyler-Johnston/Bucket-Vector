@@ -9,6 +9,7 @@
 #include <iterator>
 #include <memory>
 #include <stdexcept>
+#include <iostream>
 
 #include <list>
 
@@ -48,10 +49,12 @@ namespace usu
             public:
                 Bucket(std::uint16_t capacity) :
                     m_data(std::make_shared<T[]>(capacity)),
+                    m_capacity(capacity),
                     m_size(0)
                 {}
                 const std::shared_ptr<T[]>& getData() const { return m_data; }
                 std::uint16_t getSize() const { return m_size; }
+                std::uint16_t getCapacity() const { return m_capacity; }
                 void setSize(std::uint16_t newSize) { m_size = newSize; }
                 void setValueAtIndex(std::uint16_t index, const T& value) 
                 {
@@ -61,10 +64,19 @@ namespace usu
                     }
                     m_data[index] = value;
                 }
+                void viewAllElements()
+                {
+                    std::cout << "viewing all elements of this bucket of size " << m_size << ":" << std::endl;
+                    for (size_type i = 0; i < m_size; i++)
+                    {
+                        std::cout << m_data[i] << std::endl;
+                    }
+                }
 
             private:
                 std::shared_ptr<T[]> m_data;
                 size_type m_size;
+                size_type m_capacity;
         };
 
         class iterator
@@ -184,7 +196,8 @@ namespace usu
         }
 
         size_type count = 0;
-        for (auto& bucket : buckets) {
+        for (auto& bucket : buckets) 
+        {
             size_type bucketSize = bucket->getSize();
             if (index < count + bucketSize) 
             {
@@ -208,22 +221,17 @@ namespace usu
 
             // copy first half to firstHalfBucket
             std::copy(lastBucket->getData().get(), lastBucket->getData().get() + m_capacity / 2, firstHalfBucket->getData().get());
-
             // copy second half to secondHalfBucket
             std::copy(lastBucket->getData().get() + m_capacity / 2, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
-
             // adjust the sizes
             firstHalfBucket->setSize(m_capacity / 2);
             // the second half will have one additional item in it
             secondHalfBucket->setSize((m_capacity / 2) + 1);
-            
             // remove the old lastBucket
             buckets.pop_back();
-            
             // add the two new buckets
             buckets.push_back(firstHalfBucket);
             buckets.push_back(secondHalfBucket);
-
             // add the new value to the end of the secondHalfBucket
             secondHalfBucket->setValueAtIndex(m_capacity / 2, value);
         }
@@ -241,69 +249,66 @@ namespace usu
     {
         if (index > m_size)
         {
-            throw std::range_error("Invalid insert index");
+            throw std::range_error("Index out of bounds for the inserting");
         }
 
-        // loop through the list of buckets
+        // TODO: i am using this type of iterating herre and in the [] operation - i wonder if i should be using this
+        // in the iterator logic and just calling the begin() and end() iterator funcs instead of re-using code
         size_type count = 0;
-        for (auto it = buckets.begin(); it != buckets.end(); ++it)
+        for (auto& bucket : buckets) 
         {
-            auto& targetBucket = *it;
-            size_type bucketSize = targetBucket->getSize();
-
-            // find the correct bucket in the list of buckets
-            if (index < count + bucketSize)
+            size_type bucketSize = bucket->getSize();
+            if (index < count + bucketSize) 
             {
-                size_type innerIndex = index - count;
-                if (bucketSize < m_capacity)
+                std::cout << "buck size: " << bucketSize << std::endl;
+                std::cout << "buck cap: " << bucket->getCapacity() << std::endl;
+                // bucket is full do the splitting and insert into the right bucket
+                if (bucketSize == m_capacity)
                 {
-                    for (size_type i = bucketSize; i > innerIndex; i--)
-                    {
-                        targetBucket->setValueAtIndex(i, targetBucket->getData()[i - 1]);
-                    }
-                    targetBucket->setValueAtIndex(innerIndex, value);
-                    targetBucket->setSize(bucketSize + 1);
-                }
-                else  // the bucket is full so do the splitting
-                {
+                    std::cout << "in the bucketSize == m_capacity sect" << std::endl;
                     auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
                     auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
 
-                    size_type mid = m_capacity / 2;
-                    bool insertInFirstHalf = innerIndex < mid;
-                    if (insertInFirstHalf)
-                    {
-                        std::copy(targetBucket->getData().get(), targetBucket->getData().get() + innerIndex, firstHalfBucket->getData().get());
-                        firstHalfBucket->setValueAtIndex(innerIndex, value);
-                        std::copy(targetBucket->getData().get() + innerIndex, targetBucket->getData().get() + mid, firstHalfBucket->getData().get() + innerIndex + 1);
-                        std::copy(targetBucket->getData().get() + mid, targetBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
-
-                        // set the sizes
-                        firstHalfBucket->setSize(mid + 1);
-                        secondHalfBucket->setSize(mid);
-                    }
-                    else
-                    {
-                        std::copy(targetBucket->getData().get(), targetBucket->getData().get() + mid, firstHalfBucket->getData().get());
-                        std::copy(targetBucket->getData().get() + mid, targetBucket->getData().get() + innerIndex, secondHalfBucket->getData().get());
-                        secondHalfBucket->setValueAtIndex(innerIndex - mid, value);
-                        std::copy(targetBucket->getData().get() + innerIndex, targetBucket->getData().get() + m_capacity, secondHalfBucket->getData().get() + innerIndex - mid + 1);
-
-                        // set the sizes    
-                        firstHalfBucket->setSize(mid);
-                        secondHalfBucket->setSize(mid + 1);
-                    }
-
-                    // modify the list of buckets
-                    it = buckets.erase(it);
-                    it = buckets.insert(it, secondHalfBucket);
-                    it = buckets.insert(it, firstHalfBucket);
                 }
-                m_size++;
-                return; // break out of the loop
+                // bucket is not full, readjust the bucket and insert into the right spot
+                else
+                {
+                    std::cout << "in the ELSE clause of the bucketSize == m_capacity sect" << std::endl;
+                    size_type innerIndex = index - count;
+                    for (size_type i = bucketSize; i > innerIndex; i--)
+                    {
+                        bucket->setValueAtIndex(i, bucket->getData()[i - 1]);
+                    }
+                    bucket->setValueAtIndex(innerIndex, value);
+                    bucket->setSize(bucketSize + 1);
+                    m_size++;
+                    std::cout << "NEW buck size: " << bucketSize << std::endl;
+                    std::cout << "NEW buck cap: " << bucket->getCapacity() << std::endl;
+                    bucket->viewAllElements();
+                    return;
+                }
+                std::cout << "got past the if/else within if (index < count + bucketSize)" << std::endl;
             }
             count += bucketSize;
         }
+
+        throw std::range_error("Index out of bounds in the 2nd part of the inserting section");  // this should not happen
+
+
+            // not full bucket:
+            // [1,2,3,4,_]
+            //insert(1,99)
+            // [1,99,2,3,4]
+
+
+
+            // m_capacity = 5
+            // [1,2,3,4,5] [6,7,8,9,10]
+            // insert(1,99)
+            // notice that the bucket trying to insert into is full already. 
+            // [1,2,3, _, _] [4, 5, _, _, _], [6,7,8,9,10]
+            // [1,99,2,3, _] [4, 5, _, _, _], [6,7,8,9,10]
+
     }
 
     //TODO: finish this
