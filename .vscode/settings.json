@@ -58,6 +58,7 @@
         "variant": "cpp",
         "algorithm": "cpp",
         "functional": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "list": "cpp"
     }
 }

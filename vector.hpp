@@ -1,42 +1,20 @@
 #pragma once
 
 #include <algorithm>
-#include <concepts>
 #include <cstddef> // for std::size_t
 #include <cstdint>
 #include <functional>
 #include <initializer_list>
 #include <iterator>
+#include <list>
 #include <memory>
 #include <stdexcept>
 #include <iostream>
 
-#include <list>
-
-namespace usu
-{
-    template <typename T>
-    concept Array = requires(T x)
-    {
-        x.operator[](0);
-        {
-            x.size()
-            } -> std::convertible_to<std::size_t>;
-    };
+namespace usu {
 
     template <typename T>
-    concept BeginEnd = requires(T x)
-    {
-        x.begin();
-        x.end();
-    };
-
-    template <typename T>
-    concept Vector = Array<T> && BeginEnd<T>;
-
-    template <typename T>
-    class vector
-    {
+    class vector {
       public:
         using size_type = std::size_t;
         using reference = T&;
@@ -44,338 +22,227 @@ namespace usu
         using value_type = T;
         using resize_type = std::function<size_type(size_type)>;
 
-        class Bucket
-        {
-            public:
-                Bucket(std::uint16_t capacity) :
-                    m_data(std::make_shared<T[]>(capacity)),
-                    m_capacity(capacity),
-                    m_size(0)
-                {}
-                const std::shared_ptr<T[]>& getData() const { return m_data; }
-                std::uint16_t getSize() const { return m_size; }
-                std::uint16_t getCapacity() const { return m_capacity; }
-                void setSize(std::uint16_t newSize) { m_size = newSize; }
-                void setValueAtIndex(std::uint16_t index, const T& value) 
-                {
-                    if (index > m_size) 
-                    {
-                        throw std::out_of_range("Index out of bounds in the SetValueAtIndex");
-                    }
-                    m_data[index] = value;
-                }
-                void viewAllElements()
-                {
-                    std::cout << "viewing all elements of this bucket of size " << m_size << ":" << std::endl;
-                    for (size_type i = 0; i < m_size; i++)
-                    {
-                        std::cout << m_data[i] << std::endl;
-                    }
-                }
-
-            private:
-                std::shared_ptr<T[]> m_data;
-                size_type m_size;
-                size_type m_capacity;
-        };
-
-        class iterator
-        {
+        class Bucket {
           public:
-            using iterator_category = std::bidirectional_iterator_tag;
-            using difference_type = std::size_t;
-            using bucketIterator = typename std::list<std::shared_ptr<Bucket>>::iterator;
-
-            iterator() :
-                iterator(nullptr) // DefaultConstructable
-            {
-            }
-            iterator(const iterator& obj) :
-                m_pos(obj.m_pos),
-                m_bucketIt(obj.m_bucketIt)
-            {
-            }
-            // iterator(pointer data) :
-            //     m_pos(0),
-            //     m_bucketIt(data)
-            // {
-            // }
-            // iterator(size_type pos, pointer data) :
-            //     m_pos(pos),
-            //     m_bucketIt(data)
-            // {
-            // }
-            iterator(bucketIterator bucketIt, size_type pos) :
-                m_pos(pos),
-                m_bucketIt(bucketIt)
-            {
-            }
-
-            reference operator*() 
-            { 
-                return (*m_bucketIt)->getData().get()[m_pos];
-            }
-
-            auto* operator->()
-            {
-                return &(m_bucketIt[m_pos]);
-            }
-
-            iterator operator++();
-            iterator operator++(int);
-            iterator operator--();
-            iterator operator--(int);
-
-            bool operator==(const iterator& rhs) const
-            {
-                return m_pos == rhs.m_pos && m_bucketIt == rhs.m_bucketIt;
-            }
-
-            bool operator!=(const iterator& rhs) const
-            {
-                return !operator==(rhs);
+            Bucket(std::uint16_t capacity) :
+                m_data(std::make_shared<T[]>(capacity)),
+                m_capacity(capacity),
+                m_size(0) {}
+            
+            const std::shared_ptr<T[]>& getData() const { return m_data; }
+            std::uint16_t getSize() const { return m_size; }
+            std::uint16_t getCapacity() const { return m_capacity; }
+            void setSize(std::uint16_t newSize) { m_size = newSize; }
+            void setValueAtIndex(std::uint16_t index, const T& value) {
+                if (index > m_size) {
+                    throw std::out_of_range("Index out of bounds in the SetValueAtIndex in the bucket");
+                }
+                m_data[index] = value;
             }
 
           private:
-              typename std::list<std::shared_ptr<Bucket>>::iterator m_bucketIt; // iterator to the current bucket
-              size_type m_pos; // index within the current bucket
+            std::shared_ptr<T[]> m_data;
+            size_type m_size;
+            size_type m_capacity;
         };
 
-        vector();
+        class iterator {
+          public:
+            using iterator_category = std::bidirectional_iterator_tag;
+            using difference_type = std::size_t;
+            using BucketListIterator = typename std::list<std::shared_ptr<Bucket>>::iterator;
 
-        reference operator[](size_type index);
-        void add(T value);
-        void insert(size_type index, T value);
-        void remove(size_type index);
-        void clear();
+            iterator(std::list<std::shared_ptr<Bucket>>& bucketsRef, BucketListIterator bucketIt, size_type pos) 
+                : m_bucketsRef(bucketsRef), m_bucketIt(bucketIt), m_pos(pos) {}
 
-        size_type size() { return m_size; }
-        size_type capacity() { return m_capacity; }
+            reference operator*() { 
+                return (*m_bucketIt)->getData().get()[m_pos];
+            }
 
-        iterator begin() 
-        {
-            return buckets.empty() ? iterator(buckets.end(), 0) : iterator(buckets.begin(), 0);
+            auto* operator->() {
+                return &((*m_bucketIt)->getData().get()[m_pos]);
+            }
+
+            iterator& operator++() {
+                if (++m_pos >= (*m_bucketIt)->getSize() && std::next(m_bucketIt) != m_bucketsRef.end()) {
+                    ++m_bucketIt;
+                    m_pos = 0;
+                }
+                return *this;
+            }
+
+            iterator operator++(int) {
+                iterator temp = *this;
+                ++(*this);
+                return temp;
+            }
+
+            iterator& operator--() {
+                if (m_pos == 0 && m_bucketIt != m_bucketsRef.begin()) {
+                    --m_bucketIt;
+                    m_pos = (*m_bucketIt)->getSize();
+                } else if (m_pos > 0) {
+                    --m_pos;
+                }
+                return *this;
+            }
+
+            iterator operator--(int) {
+                iterator temp = *this;
+                --(*this);
+                return temp;
+            }
+
+            bool operator==(const iterator& rhs) const {
+                return m_pos == rhs.m_pos && m_bucketIt == rhs.m_bucketIt;
+            }
+
+            bool operator!=(const iterator& rhs) const {
+                return !(*this == rhs);
+            }
+
+          private:
+            BucketListIterator m_bucketIt;
+            size_type m_pos;
+            std::list<std::shared_ptr<Bucket>>& m_bucketsRef;
+        };
+
+        vector() : m_size(0), m_capacity(DEFAULT_BUCKET_CAPACITY) {
+            auto initialBucket = std::make_shared<Bucket>(m_capacity);
+            buckets.push_back(initialBucket);
         }
 
-        iterator end() 
-        {
-            return buckets.empty() ? iterator(buckets.end(), 0) : iterator(std::prev(buckets.end()), std::prev(buckets.end())->get()->getSize());
+        reference operator[](size_type index) {
+            if (index >= m_size) {
+                throw std::range_error("Index out of bounds in operator[]");
+            }
+
+            size_type count = 0;
+            for (auto& bucket : buckets) {
+                size_type bucketSize = bucket->getSize();
+                if (index < count + bucketSize) {
+                    return bucket->getData().get()[index - count];
+                }
+                count += bucketSize;
+            }
+
+            throw std::range_error("Index out of bounds in the 2nd part of operator[]");
+        }
+
+        void add(T value) {
+            auto& lastBucket = buckets.back();
+            if (lastBucket->getSize() == m_capacity) {
+                auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
+                auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
+
+                // Copy first half to firstHalfBucket
+                std::copy(lastBucket->getData().get(), lastBucket->getData().get() + m_capacity / 2, firstHalfBucket->getData().get());
+                // Copy second half to secondHalfBucket
+                std::copy(lastBucket->getData().get() + m_capacity / 2, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
+                // Adjust the sizes
+                firstHalfBucket->setSize(m_capacity / 2);
+                secondHalfBucket->setSize((m_capacity / 2) + 1);
+
+                // Remove the old lastBucket and add the two new buckets
+                buckets.pop_back();
+                buckets.push_back(firstHalfBucket);
+                buckets.push_back(secondHalfBucket);
+
+                // Add the new value to the end of the secondHalfBucket
+                secondHalfBucket->setValueAtIndex(m_capacity / 2, value);
+            } else {
+                size_type currentSize = lastBucket->getSize();
+                lastBucket->setValueAtIndex(currentSize, value);
+                lastBucket->setSize(currentSize + 1);
+            }
+            m_size++;
+        }
+
+        void insert(size_type index, T value) {
+            if (index > m_size) {
+                throw std::range_error("Invalid index in insert");
+            }
+
+            // Iterate through buckets to find the correct position
+            size_type count = 0;
+            for (auto& bucket : buckets) {
+                size_type bucketSize = bucket->getSize();
+                if (index < count + bucketSize) {
+                    // Check if the bucket is full and needs splitting
+                    if (bucketSize == m_capacity) {
+                        auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
+                        auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
+
+                        size_type mid = m_capacity / 2;
+                        size_type innerIndex = index - count;
+                        bool insertInFirstHalf = innerIndex < mid;
+
+                        if (insertInFirstHalf) {
+                            std::copy(bucket->getData().get(), bucket->getData().get() + innerIndex, firstHalfBucket->getData().get());
+                            firstHalfBucket->setValueAtIndex(innerIndex, value);
+                            std::copy(bucket->getData().get() + innerIndex, bucket->getData().get() + mid, firstHalfBucket->getData().get() + innerIndex + 1);
+                            std::copy(bucket->getData().get() + mid, bucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
+
+                            firstHalfBucket->setSize(mid + 1);
+                            secondHalfBucket->setSize(mid);
+                        } else {
+                            std::copy(bucket->getData().get(), bucket->getData().get() + mid, firstHalfBucket->getData().get());
+                            std::copy(bucket->getData().get() + mid, bucket->getData().get() + innerIndex, secondHalfBucket->getData().get());
+                            secondHalfBucket->setValueAtIndex(innerIndex - mid, value);
+                            std::copy(bucket->getData().get() + innerIndex, bucket->getData().get() + m_capacity, secondHalfBucket->getData().get() + innerIndex - mid + 1);
+
+                            firstHalfBucket->setSize(mid);
+                            secondHalfBucket->setSize(mid + 1);
+                        }
+
+                        // Replace the original bucket with the two new buckets
+                        auto currentBucketIt = std::find(buckets.begin(), buckets.end(), bucket);
+                        if (currentBucketIt != buckets.end()) {
+                            buckets.insert(currentBucketIt, secondHalfBucket);
+                            buckets.insert(currentBucketIt, firstHalfBucket);
+                            buckets.erase(currentBucketIt);
+                        }
+                    } else {
+                        // Insert in a non-full bucket
+                        size_type innerIndex = index - count;
+                        for (size_type i = bucketSize; i > innerIndex; --i) {
+                            bucket->setValueAtIndex(i, bucket->getData().get()[i - 1]);
+                        }
+                        bucket->setValueAtIndex(innerIndex, value);
+                        bucket->setSize(bucketSize + 1);
+                    }
+                    m_size++;
+                    return;
+                }
+                count += bucketSize;
+            }
+        }
+
+        void remove(size_type index) {
+            // TODO: Implement the remove method
+        }
+
+        void clear() {
+            buckets.clear();
+            m_size = 0;
+        }
+
+        size_type size() const { return m_size; }
+        size_type capacity() const { return m_capacity; }
+
+        iterator begin() {
+            return iterator(buckets, buckets.begin(), 0);
+        }
+
+        iterator end() {
+            return buckets.empty() ? iterator(buckets, buckets.end(), 0) : iterator(buckets, std::prev(buckets.end()), std::prev(buckets.end())->get()->getSize());
         }
 
       private:
-        size_type DEFAULT_BUCKET_CAPACITY = 10;
+        static const size_type DEFAULT_BUCKET_CAPACITY = 10;
         std::list<std::shared_ptr<Bucket>> buckets;
         size_type m_size; // the number of elements in the vector (NOT the number of buckets)
         size_type m_capacity; // the capacity of each bucket
     };
 
-    template <typename T>
-    vector<T>::vector() :
-        m_size(0),
-        m_capacity(DEFAULT_BUCKET_CAPACITY)
-    {
-        auto initialBucket = std::make_shared<Bucket>(m_capacity);
-        buckets.push_back(initialBucket);
-    }
-
-    // template <typename T>
-    // vector<T>::vector(size_type capacity) :
-    //     m_size(0),
-    //     m_capacity(capacity)
-    // {
-    //     auto initialBucket = std::make_shared<Bucket>(m_capacity);
-    //     buckets.push_back(initialBucket);
-    // }
-
-    template <typename T>
-    typename vector<T>::reference vector<T>::operator[](size_type index)
-    {
-        if (index >= m_size)
-        {
-            throw std::range_error("Index out of bounds in the operator[] section");
-        }
-
-        size_type count = 0;
-        for (auto& bucket : buckets) 
-        {
-            size_type bucketSize = bucket->getSize();
-            if (index < count + bucketSize) 
-            {
-                // the right bucket was found, return the element at that index
-                return bucket->getData()[index - count];
-            }
-            count += bucketSize;
-        }
-
-        throw std::range_error("Index out of bounds in the 2nd part of the operator[] section");  // this should not happen
-    }
-
-    template <typename T>
-    void vector<T>::add(T value)
-    {
-        auto& lastBucket = buckets.back();
-        if (lastBucket->getSize() == m_capacity)
-        {
-            auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
-            auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
-
-            // copy first half to firstHalfBucket
-            std::copy(lastBucket->getData().get(), lastBucket->getData().get() + m_capacity / 2, firstHalfBucket->getData().get());
-            // copy second half to secondHalfBucket
-            std::copy(lastBucket->getData().get() + m_capacity / 2, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
-            // adjust the sizes
-            firstHalfBucket->setSize(m_capacity / 2);
-            // the second half will have one additional item in it
-            secondHalfBucket->setSize((m_capacity / 2) + 1);
-            // remove the old lastBucket
-            buckets.pop_back();
-            // add the two new buckets
-            buckets.push_back(firstHalfBucket);
-            buckets.push_back(secondHalfBucket);
-            // add the new value to the end of the secondHalfBucket
-            secondHalfBucket->setValueAtIndex(m_capacity / 2, value);
-        }
-        else
-        {
-            size_type currentSize = lastBucket->getSize();
-            lastBucket->setValueAtIndex(currentSize, value);
-            lastBucket->setSize(currentSize + 1);
-        }
-        m_size++;
-    }
-
-    template <typename T>
-    void vector<T>::insert(size_type index, T value)
-    {
-        if (index > m_size)
-        {
-            throw std::range_error("Index out of bounds for the inserting");
-        }
-
-        // TODO: i am using this type of iterating herre and in the [] operation - i wonder if i should be using this
-        // in the iterator logic and just calling the begin() and end() iterator funcs instead of re-using code
-        size_type count = 0;
-        for (auto& bucket : buckets) 
-        {
-            size_type bucketSize = bucket->getSize();
-            if (index < count + bucketSize) 
-            {
-                std::cout << "buck size: " << bucketSize << std::endl;
-                std::cout << "buck cap: " << bucket->getCapacity() << std::endl;
-                // bucket is full do the splitting and insert into the right bucket
-                if (bucketSize == m_capacity)
-                {
-                    std::cout << "in the bucketSize == m_capacity sect" << std::endl;
-                    auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
-                    auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
-
-                }
-                // bucket is not full, readjust the bucket and insert into the right spot
-                else
-                {
-                    std::cout << "in the ELSE clause of the bucketSize == m_capacity sect" << std::endl;
-                    size_type innerIndex = index - count;
-                    for (size_type i = bucketSize; i > innerIndex; i--)
-                    {
-                        bucket->setValueAtIndex(i, bucket->getData()[i - 1]);
-                    }
-                    bucket->setValueAtIndex(innerIndex, value);
-                    bucket->setSize(bucketSize + 1);
-                    m_size++;
-                    std::cout << "NEW buck size: " << bucketSize << std::endl;
-                    std::cout << "NEW buck cap: " << bucket->getCapacity() << std::endl;
-                    bucket->viewAllElements();
-                    return;
-                }
-                std::cout << "got past the if/else within if (index < count + bucketSize)" << std::endl;
-            }
-            count += bucketSize;
-        }
-
-        throw std::range_error("Index out of bounds in the 2nd part of the inserting section");  // this should not happen
-
-
-            // not full bucket:
-            // [1,2,3,4,_]
-            //insert(1,99)
-            // [1,99,2,3,4]
-
-
-
-            // m_capacity = 5
-            // [1,2,3,4,5] [6,7,8,9,10]
-            // insert(1,99)
-            // notice that the bucket trying to insert into is full already. 
-            // [1,2,3, _, _] [4, 5, _, _, _], [6,7,8,9,10]
-            // [1,99,2,3, _] [4, 5, _, _, _], [6,7,8,9,10]
-
-    }
-
-    //TODO: finish this
-    template <typename T>
-    void vector<T>::remove(size_type index)
-    {
-
-    }
-
-    template <typename T>
-    void vector<T>::clear()
-    {
-        buckets.clear();
-    }
-
-    // TODO: CHAT-GPT PROVIDED PRE/POST FIX OPERATORS, GO BACK AND REVIEW THIS
-
-    // Prefix ++i
-    template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator++() 
-    {
-        // Move to the next element within the bucket
-        if (++m_pos >= (*m_bucketIt)->getSize()) {
-            // Move to the next bucket if we've reached the end of the current one
-            ++m_bucketIt;
-            m_pos = 0; // Reset position to the start of the new bucket
-        }
-        return *this;
-    }
-
-    // Postfix i++
-    template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator++(int) 
-    {
-        iterator tmp = *this;
-        ++(*this); // Use the prefix increment to move to the next element
-        return tmp;
-    }
-
-    // Prefix --i
-    template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator--() 
-    {
-        if (m_pos == 0 && m_bucketIt != m_bucketIt.begin()) 
-        {
-            // If at the beginning of a bucket, move to the previous bucket
-            --m_bucketIt;
-            m_pos = (*m_bucketIt)->getSize() - 1; // Last element of the previous bucket
-        } 
-        else if (m_pos > 0) 
-        {
-            // If not at the beginning, just move back one element within the bucket
-            --m_pos;
-        }
-        // Edge case: if m_pos is already 0 and m_bucketIt is at the beginning,
-        // this operation would lead to an invalid state and should be handled accordingly.
-        return *this;
-    }
-
-    // Postfix i--
-    template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator--(int) 
-    {
-        iterator tmp = *this;
-        --(*this); // Use the prefix decrement to move to the previous element
-        return tmp;
-    }
-
-
-} // namespace usu
+}

@@ -8,7 +8,7 @@ project(${PROJECT})
 #
 # Manually specifying all the source files.
 #
-set(SOURCE_FILES vector.cpp vector.hpp)
+set(SOURCE_FILES vector.hpp)
 
 set(APPLICATION_FILES main.cpp)
 set(UNIT_TEST_FILES TestVector.cpp)
