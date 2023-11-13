@@ -84,15 +84,12 @@ TEST(Buckets, Iterators)
     vec.add(30);
     auto it = vec.begin();
     EXPECT_EQ(*it, 10);
-    std::cout << "got past *it, 10" << std::endl;
     ++it;
     EXPECT_EQ(*it, 20);
-    std::cout << "got past *it, 20" << std::endl;
     ++it;
     EXPECT_EQ(*it, 30);
-    std::cout << "got past *it, 30" << std::endl;
     ++it;
-    EXPECT_EQ(it, vec.end()); // THIS FAILS
+    EXPECT_EQ(it, vec.end());
 }
 
 TEST(Buckets, SplittingFromInsert)
