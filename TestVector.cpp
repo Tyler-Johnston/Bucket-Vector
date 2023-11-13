@@ -101,10 +101,14 @@ TEST(Buckets, SplittingFromInsert)
     }
     EXPECT_EQ(vec.size(), 10);
     
-    vec.insert(1,99);  // newVec: [0, 1, 99, 3, 4, 5, 6, 7, 8, 9] -- THIS FAILS
+    vec.insert(1,99);
     EXPECT_EQ(vec.size(), 11);
     EXPECT_EQ(vec[0], 0);
     EXPECT_EQ(vec[1], 1);
     EXPECT_EQ(vec[2], 99);
-    EXPECT_EQ(vec[3], 3);
+    EXPECT_EQ(vec[3], 2);
+    EXPECT_EQ(vec[4], 3);
+    EXPECT_EQ(vec[5], 4);
+    EXPECT_EQ(vec[6], 5);
+    EXPECT_EQ(vec[7], 6);
 }
