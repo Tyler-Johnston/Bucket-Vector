@@ -205,24 +205,54 @@ namespace usu {
                 // Handle the case where the bucket is full and needs to be split
                 if (bucketSize == m_capacity) {
                     // Create a temporary bucket to hold all elements plus the new one
-                    auto tempBucket = std::make_shared<Bucket>(m_capacity + 1);
+                    // auto tempBucket = std::make_shared<Bucket>(m_capacity + 1);
                     
-                    // Copy elements up to the insert index
-                    std::copy(bucket->getData().get(), bucket->getData().get() + index - count, tempBucket->getData().get());
+                    // // copy elements up to the insert index
+                    // std::copy(bucket->getData().get(), bucket->getData().get() + index - count, tempBucket->getData().get());
                     
-                    // Insert the new element
-                    tempBucket->getData().get()[index - count] = value;
+                    // // Insert the new element
+                    // tempBucket->getData().get()[index - count] = value;
 
-                    // Copy the rest of the elements
-                    std::copy(bucket->getData().get() + index - count, bucket->getData().get() + m_capacity, tempBucket->getData().get() + index - count + 1);
+                    // // Copy the rest of the elements
+                    // std::copy(bucket->getData().get() + index - count, bucket->getData().get() + m_capacity, tempBucket->getData().get() + index - count + 1);
+                    // tempBucket->setSize(m_capacity + 1);
+
+                    // std::cout << "TEMP BUCKET:" << std::endl;
+                    // tempBucket->print();
+                    // std::cout << "-------" << std::endl;
+
+                    auto tempBucket = std::make_shared<Bucket>(m_capacity + 1);
+
+                    int tempIndex = 0;  // Initialize a new index for the temporary bucket
+                    for (int i = 0; i < m_capacity; ++i) {
+                        if (i == index - count + 1) {
+                            // Insert the new element '99'
+                            tempBucket->getData().get()[tempIndex] = 99;
+                            ++tempIndex;
+                        }
+
+                        // Copy elements from the original bucket to the temporary bucket
+                        tempBucket->getData().get()[tempIndex] = bucket->getData().get()[i];
+                        ++tempIndex;
+                    }
+
+                    // If 'index - count' was at the end, insert '99' at the end
+                    if (index - count == m_capacity) {
+                        tempBucket->getData().get()[tempIndex] = value;
+                    }
+
                     tempBucket->setSize(m_capacity + 1);
+
+                    std::cout << "TEMP BUCKET:" << std::endl;
+                    tempBucket->print();
+                    std::cout << "-------" << std::endl;
 
                     // Now split tempBucket into two new buckets
                     auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
                     auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
 
                     // Determine the midpoint for splitting
-                    size_type mid = (m_capacity + 1) / 2;
+                    size_type mid = (m_capacity + 2) / 2;
 
                     // Split the tempBucket into two halves
                     std::copy(tempBucket->getData().get(), tempBucket->getData().get() + mid, firstHalfBucket->getData().get());
