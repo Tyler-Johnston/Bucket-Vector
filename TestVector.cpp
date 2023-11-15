@@ -421,9 +421,7 @@ TEST(Modify, Remove)
     std::vector<int> primes{ 1, 2, 3, 5, 7, 11 };
     usu::vector<int> v1{ 1, 2, 3, 5, 7, 11 };
 
-
     v1.remove(0);
-    std::cout << "got past first remove" << std::endl;
     EXPECT_EQ(v1.size(), 5);
 
     for (std::size_t pos = 0; pos < v1.size(); pos++)
@@ -433,7 +431,6 @@ TEST(Modify, Remove)
 
     usu::vector<int> v2{ 1, 2, 3, 5, 7, 11 };
     v2.remove(v2.size() - 1);
-    std::cout << "got past second remove" << std::endl;
     EXPECT_EQ(v2.size(), 5);
 
     for (std::size_t pos = 0; pos < v2.size(); pos++)
@@ -443,7 +440,6 @@ TEST(Modify, Remove)
 
     usu::vector<int> v3{ 1, 2, 3, 5, 7, 11 };
     v3.remove(2);
-    std::cout << "got 3rd second remove" << std::endl;
     primes.erase(primes.begin() + 2);
     EXPECT_EQ(v3.size(), 5);
 
@@ -458,7 +454,6 @@ TEST(Modify, Remove)
         usu::vector<int> v4{ 1, 2, 3, 5, 7, 11 };
 
         v4.remove(v4.size() + 1);
-        std::cout << "got past 4th remove" << std::endl;
         EXPECT_EQ(true, false);
     }
     catch (const std::range_error&)

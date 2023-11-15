@@ -11,7 +11,8 @@
 #include <stdexcept>
 #include <iostream>
 
-namespace usu {
+namespace usu 
+{
 
     template <typename T>
     class vector 
@@ -38,7 +39,7 @@ namespace usu {
             void setValueAtIndex(std::uint16_t index, const T& value) 
             {
                 if (index > m_size) {
-                    throw std::out_of_range("Index out of bounds in the SetValueAtIndex in the bucket");
+                    throw std::range_error("Index out of bounds in the SetValueAtIndex in the bucket");
                 }
                 m_data[index] = value;
             }
@@ -133,6 +134,7 @@ namespace usu {
             std::list<std::shared_ptr<Bucket>>& m_bucketsRef;
         };
 
+        // maybe add ability to change the capacity size
         vector(): 
             m_size(0), 
             m_capacity(DEFAULT_BUCKET_CAPACITY) 
@@ -141,8 +143,8 @@ namespace usu {
             buckets.push_back(initialBucket);
         }
 
-        vector(std::initializer_list<T> list) 
-            : m_size(0), // Start with size 0, it will be updated as elements are added.
+        vector(std::initializer_list<T> list) : 
+            m_size(0),
             m_capacity(DEFAULT_BUCKET_CAPACITY) 
         {
             auto initialBucket = std::make_shared<Bucket>(m_capacity);
@@ -251,16 +253,6 @@ namespace usu {
                     firstHalfBucket->setSize(mid);
                     secondHalfBucket->setSize(m_capacity + 1 - mid);
 
-                    // debugging / viewing buckets after insertions
-                    // std::cout << "firstHalfBucket" << std::endl;
-                    // firstHalfBucket->print();
-
-                    // std::cout << "secondHalfBucket" << std::endl;
-                    // secondHalfBucket->print();
-
-                    // std::cout << "--------" << std::endl;
-
-
                     auto bucketIt = std::find(buckets.begin(), buckets.end(), bucket);
                     if (bucketIt != buckets.end()) 
                     {
@@ -290,7 +282,7 @@ namespace usu {
         throw std::range_error("Index out of bounds in the second part of the insert method");
     }
 
-    // does not handle any merging logic
+    // does not handle any potential merging logic
     void remove(size_type index) 
     {
         if (index >= m_size) 
@@ -303,7 +295,7 @@ namespace usu {
         {
             size_type bucketSize = bucket->getSize();
             if (index <= bucketSize) 
-            { // Found the right bucket
+            { // found the right bucket
                 found = true;
                 // shift elements left to fill the gap
                 for (size_type i = index; i < bucketSize - 1; i++) 
