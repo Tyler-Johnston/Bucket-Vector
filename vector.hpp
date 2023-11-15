@@ -141,6 +141,19 @@ namespace usu {
             buckets.push_back(initialBucket);
         }
 
+        vector(std::initializer_list<T> list) 
+            : m_size(0), // Start with size 0, it will be updated as elements are added.
+            m_capacity(DEFAULT_BUCKET_CAPACITY) 
+        {
+            auto initialBucket = std::make_shared<Bucket>(m_capacity);
+            buckets.push_back(initialBucket);
+            for (const auto& value : list) 
+            {
+                add(value);
+            }
+        }
+
+
         reference operator[](size_type index) 
         {
             if (index >= m_size) 
@@ -203,7 +216,7 @@ namespace usu {
         for (auto& bucket : buckets) 
         {
             size_type bucketSize = bucket->getSize();
-            if (index < count + bucketSize) 
+            if (index <= count + bucketSize) 
             {
                 if (bucketSize == m_capacity) 
                 {
@@ -213,7 +226,7 @@ namespace usu {
                     int tempIndex = 0;
                     for (int i = 0; i < m_capacity; i++) 
                     {
-                        if (i == index - count + 1) 
+                        if (i == index - count) 
                         {
                             tempBucket->getData().get()[tempIndex] = value;
                             tempIndex++;
@@ -237,6 +250,16 @@ namespace usu {
 
                     firstHalfBucket->setSize(mid);
                     secondHalfBucket->setSize(m_capacity + 1 - mid);
+
+                    // debugging / viewing buckets after insertions
+                    // std::cout << "firstHalfBucket" << std::endl;
+                    // firstHalfBucket->print();
+
+                    // std::cout << "secondHalfBucket" << std::endl;
+                    // secondHalfBucket->print();
+
+                    // std::cout << "--------" << std::endl;
+
 
                     auto bucketIt = std::find(buckets.begin(), buckets.end(), bucket);
                     if (bucketIt != buckets.end()) 
@@ -272,14 +295,14 @@ namespace usu {
     {
         if (index >= m_size) 
         {
-            throw std::out_of_range("Index out of range");
+            throw std::range_error("Index out of range");
         }
 
         bool found = false;
         for (auto& bucket : buckets) 
         {
             size_type bucketSize = bucket->getSize();
-            if (index < bucketSize) 
+            if (index <= bucketSize) 
             { // Found the right bucket
                 found = true;
                 // shift elements left to fill the gap
@@ -296,7 +319,7 @@ namespace usu {
 
         if (!found) 
         {
-            throw std::logic_error("Element to remove not found"); // this shouldnt happen if the user input is correct
+            throw std::range_error("Element to remove not found"); // this shouldnt happen if the user input is correct
         }
 
         m_size--;
