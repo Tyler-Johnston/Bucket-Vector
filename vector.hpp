@@ -42,6 +42,7 @@ namespace usu {
                 }
                 m_data[index] = value;
             }
+            // print for viewing elements of bucket, for debugging purposes
             void print()
             {
                 for (int i = 0; i < m_size; i++)
@@ -81,9 +82,9 @@ namespace usu {
 
             iterator& operator++() 
             {
-                if (++m_pos >= (*m_bucketIt)->getSize() && std::next(m_bucketIt) != m_bucketsRef.end()) 
+                if (m_pos++ >= (*m_bucketIt)->getSize() && std::next(m_bucketIt) != m_bucketsRef.end()) 
                 {
-                    ++m_bucketIt;
+                    m_bucketIt++;
                     m_pos = 0;
                 }
                 return *this;
@@ -92,7 +93,7 @@ namespace usu {
             iterator operator++(int) 
             {
                 iterator temp = *this;
-                ++(*this);
+                (*this)++;
                 return temp;
             }
 
@@ -100,11 +101,11 @@ namespace usu {
             {
                 if (m_pos == 0 && m_bucketIt != m_bucketsRef.begin()) 
                 {
-                    --m_bucketIt;
+                    m_bucketIt--;
                     m_pos = (*m_bucketIt)->getSize();
                 } else if (m_pos > 0) 
                 {
-                    --m_pos;
+                    m_pos--;
                 }
                 return *this;
             }
@@ -112,7 +113,7 @@ namespace usu {
             iterator operator--(int) 
             {
                 iterator temp = *this;
-                --(*this);
+                (*this)--;
                 return temp;
             }
 
@@ -193,31 +194,40 @@ namespace usu {
             m_size++;
         }
 
-    void insert(size_type index, T value) {
-        if (index > m_size) {
+    void insert(size_type index, T value) 
+    {
+        if (index > m_size) 
+        {
             throw std::range_error("Invalid insert index");
         }
 
         size_type count = 0;
-        for (auto& bucket : buckets) {
+        for (auto& bucket : buckets) 
+        {
             size_type bucketSize = bucket->getSize();
-            if (index < count + bucketSize) {
-                if (bucketSize == m_capacity) {
+            if (index < count + bucketSize) 
+            {
+                if (bucketSize == m_capacity) 
+                {
+                    // create a temporary bucket may not be the most space-efficient solution,
+                    // but it ensures the sub-buckets are split evenly and easily
                     auto tempBucket = std::make_shared<Bucket>(m_capacity + 1);
                     int tempIndex = 0;
-                    for (int i = 0; i < m_capacity; ++i) {
-                        if (i == index - count + 1) {
+                    for (int i = 0; i < m_capacity; i++) 
+                    {
+                        if (i == index - count + 1) 
+                        {
                             tempBucket->getData().get()[tempIndex] = value;
-                            ++tempIndex;
+                            tempIndex++;
                         }
                         tempBucket->getData().get()[tempIndex] = bucket->getData().get()[i];
-                        ++tempIndex;
+                        tempIndex++;
                     }
 
-                    if (index - count == m_capacity) {
+                    if (index - count == m_capacity) 
+                    {
                         tempBucket->getData().get()[tempIndex] = value;
                     }
-
                     tempBucket->setSize(m_capacity + 1);
 
                     auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
@@ -231,7 +241,8 @@ namespace usu {
                     secondHalfBucket->setSize(m_capacity + 1 - mid);
 
                     auto bucketIt = std::find(buckets.begin(), buckets.end(), bucket);
-                    if (bucketIt != buckets.end()) {
+                    if (bucketIt != buckets.end()) 
+                    {
                         *bucketIt = firstHalfBucket;
                         buckets.insert(std::next(bucketIt), secondHalfBucket);
                     }
@@ -240,9 +251,11 @@ namespace usu {
                     return;
                 }
                 // Handle the case where the bucket is not full
-                else {
+                else 
+                {
                     size_type innerIndex = index - count;
-                    for (size_type i = bucketSize; i > innerIndex; --i) {
+                    for (size_type i = bucketSize; i > innerIndex; i--) 
+                    {
                         bucket->setValueAtIndex(i, bucket->getData()[i - 1]);
                     }
                     bucket->setValueAtIndex(innerIndex, value);
@@ -256,10 +269,40 @@ namespace usu {
         throw std::range_error("Index out of bounds in the second part of the insert method");
     }
 
-        void remove(size_type index) 
+    // does not handle any merging logic
+    void remove(size_type index) 
+    {
+        if (index >= m_size) 
         {
-            // TODO: Implement the remove method
+            throw std::out_of_range("Index out of range");
         }
+
+        bool found = false;
+        for (auto& bucket : buckets) 
+        {
+            size_type bucketSize = bucket->getSize();
+            if (index < bucketSize) 
+            { // Found the right bucket
+                found = true;
+                // shift elements left to fill the gap
+                for (size_type i = index; i < bucketSize - 1; i++) 
+                {
+                    bucket->setValueAtIndex(i, bucket->getData()[i + 1]);
+                }
+                // decrease the size of the bucket
+                bucket->setSize(bucketSize - 1);
+                break;
+            }
+            index -= bucketSize;
+        }
+
+        if (!found) 
+        {
+            throw std::logic_error("Element to remove not found"); // this shouldnt happen if the user input is correct
+        }
+
+        m_size--;
+    }
 
         void clear() 
         {

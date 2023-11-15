@@ -112,3 +112,26 @@ TEST(Buckets, SplittingFromInsert)
     EXPECT_EQ(vec[6], 5);
     EXPECT_EQ(vec[7], 6);
 }
+
+TEST(Buckets, Removing)
+{
+    usu::vector<int> vec;
+    for (int i = 0; i < 10; ++i)  // [0,1,2,3,4,5,6,7,8,9]
+    {
+        vec.add(i);
+    }
+    vec.remove(0); 
+    EXPECT_EQ(vec[0], 1); // [1,2,3,4,5,6,7,8,9]
+    vec.remove(0);
+    EXPECT_EQ(vec[0], 2); // [2,3,4,5,6,7,8,9]
+    vec.remove(1);
+    EXPECT_EQ(vec[0], 2); // [2,4,5,6,7,8,9]
+    vec.remove(6);
+    for (int i = 1; i < vec.size(); i++)  // [2,4,5,6,7,8] check if 4,5,6,7,8 is correct
+    {
+        EXPECT_EQ(vec[i], i+3);
+    }
+    // there is no 999th index
+    ASSERT_THROW(vec.remove(999), std::logic_error);
+
+}
