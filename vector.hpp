@@ -169,20 +169,18 @@ namespace usu {
                 auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
                 auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
 
-                // Copy first half to firstHalfBucket
+                // copy first half to firstHalfBucket
                 std::copy(lastBucket->getData().get(), lastBucket->getData().get() + m_capacity / 2, firstHalfBucket->getData().get());
-                // Copy second half to secondHalfBucket
+                // copy second half to secondHalfBucket
                 std::copy(lastBucket->getData().get() + m_capacity / 2, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
-                // Adjust the sizes
+                // adjust the sizes
                 firstHalfBucket->setSize(m_capacity / 2);
-                secondHalfBucket->setSize((m_capacity / 2) + 1);
-
-                // Remove the old lastBucket and add the two new buckets
+                secondHalfBucket->setSize((m_capacity / 2) + 1); // this is +1 because the new element will be added to the secondHalfBucket
+                // remove the old lastBucket and add the two new buckets
                 buckets.pop_back();
                 buckets.push_back(firstHalfBucket);
                 buckets.push_back(secondHalfBucket);
-
-                // Add the new value to the end of the secondHalfBucket
+                // add the new value to the end of the secondHalfBucket
                 secondHalfBucket->setValueAtIndex(m_capacity / 2, value);
             } 
             else 
