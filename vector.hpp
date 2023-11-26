@@ -13,24 +13,24 @@
 
 namespace usu
 {
-    // template <typename T>
-    // concept Array = requires(T x)
-    // {
-    //     x.operator[](0);
-    //     {
-    //         x.size()
-    //     } -> std::convertible_to<std::size_t>;
-    // };
+    template <typename T>
+    concept Array = requires(T x)
+    {
+        x.operator[](0);
+        {
+            x.size()
+        } -> std::convertible_to<std::size_t>;
+    };
 
-    // template <typename T>
-    // concept BeginEnd = requires(T x)
-    // {
-    //     x.begin();
-    //     x.end();
-    // };
+    template <typename T>
+    concept BeginEnd = requires(T x)
+    {
+        x.begin();
+        x.end();
+    };
 
-    // template <typename T>
-    // concept Vector = Array<T> && BeginEnd<T>;
+    template <typename T>
+    concept Vector = Array<T> && BeginEnd<T>;
 
     template <typename T>
     class vector
@@ -39,6 +39,69 @@ namespace usu
             using size_type = std::size_t;
             using reference = T&;
             using pointer = std::shared_ptr<T[]>;
+
+            class iterator 
+            {
+                public:
+                    using iterator_category = std::bidirectional_iterator_tag;
+                    using difference_type = std::ptrdiff_t;
+                    using value_type = T;
+                    using pointer = T*;
+                    using reference = T&;
+
+                    // Constructor
+                    iterator(size_type globalIndex, vector<T>& vec)
+                    : m_globalIndex(globalIndex), m_vector(vec) {}
+
+                    // Dereferencing operator
+                    reference operator*() const {
+                        return m_vector[m_globalIndex];
+                    }
+
+                    // Arrow operator
+                    pointer operator->() const {
+                        return &m_vector[m_globalIndex];
+                    }
+
+                    // Pre-increment operator
+                    iterator& operator++() {
+                        ++m_globalIndex;
+                        return *this;
+                    }
+
+                    // Post-increment operator
+                    iterator operator++(int) {
+                        iterator temp = *this;
+                        ++(*this);
+                        return temp;
+                    }
+
+                    // Pre-decrement operator
+                    iterator& operator--() {
+                        --m_globalIndex;
+                        return *this;
+                    }
+
+                    // Post-decrement operator
+                    iterator operator--(int) {
+                        iterator temp = *this;
+                        --(*this);
+                        return temp;
+                    }
+
+                    // Equality and inequality operators
+                    bool operator==(const iterator& other) const {
+                        return m_globalIndex == other.m_globalIndex;
+                    }
+
+                    bool operator!=(const iterator& other) const {
+                        return m_globalIndex != other.m_globalIndex;
+                    }
+
+                private:
+                    size_type m_globalIndex;
+                    vector<T>& m_vector;
+                };
 
             vector();
             vector(std::initializer_list<T> list);
@@ -52,8 +115,8 @@ namespace usu
             size_type size() const { return m_size; }
             size_type capacity() const { return m_capacity; }
 
-            // iterator begin();
-            // iterator end();
+            iterator begin();
+            iterator end();
 
         private:
             class Bucket 
@@ -298,6 +361,18 @@ namespace usu
     // {
     //     return buckets.empty() ? iterator(buckets, buckets.end(), 0) : iterator(buckets, std::prev(buckets.end()), std::prev(buckets.end())->get()->getSize());
     // }
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::begin() 
+    {
+        return iterator(0, *this);
+    }
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::end() 
+    {
+        return iterator(m_size, *this);
+    }
 
 
 }
