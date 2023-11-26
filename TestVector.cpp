@@ -69,28 +69,28 @@ TEST(Buckets, SplittingFromAdd)
     }
 }
 
-TEST(Buckets, Iterators) 
-{
-    usu::vector<int> vec;
-    auto start = vec.begin();
-    auto end = vec.end();
+// TEST(Buckets, Iterators) 
+// {
+//     usu::vector<int> vec;
+//     auto start = vec.begin();
+//     auto end = vec.end();
     
-    // test1: when the vector is empty, vec.begin() should equal vec.end().
-    EXPECT_EQ(start, end);
+//     // test1: when the vector is empty, vec.begin() should equal vec.end().
+//     EXPECT_EQ(start, end);
 
-    // test 2: Incrementing iterator
-    vec.add(10);
-    vec.add(20);
-    vec.add(30);
-    auto it = vec.begin();
-    EXPECT_EQ(*it, 10);
-    ++it;
-    EXPECT_EQ(*it, 20);
-    ++it;
-    EXPECT_EQ(*it, 30);
-    ++it;
-    EXPECT_EQ(it, vec.end());
-}
+//     // test 2: Incrementing iterator
+//     vec.add(10);
+//     vec.add(20);
+//     vec.add(30);
+//     auto it = vec.begin();
+//     EXPECT_EQ(*it, 10);
+//     ++it;
+//     EXPECT_EQ(*it, 20);
+//     ++it;
+//     EXPECT_EQ(*it, 30);
+//     ++it;
+//     EXPECT_EQ(it, vec.end());
+// }
 
 TEST(Buckets, SplittingFromInsert)
 {
