@@ -224,7 +224,6 @@ TEST(Iterators, ForCounted)
     std::vector<int> primes{ 1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41 };
     usu::vector<int> v1{ 1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41 };
 
-    std::cout << "just before the post-incremement" << std::endl;
     // Post-increment
     std::size_t pos = 0;
     for (auto itr = v1.begin(); itr != v1.end(); itr++, pos++)
@@ -232,7 +231,6 @@ TEST(Iterators, ForCounted)
         EXPECT_EQ(*itr, primes[pos]);
     }
 
-    std::cout << "just before the pre-incremement" << std::endl;
     // Pre-increment
     pos = 0;
     for (auto itr = v1.begin(); itr != v1.end(); ++itr, pos++)
@@ -240,15 +238,13 @@ TEST(Iterators, ForCounted)
         EXPECT_EQ(*itr, primes[pos]);
     }
 
-    std::cout << "just before the 2nd post-incremement" << std::endl;
     // Post-increment
     pos = primes.size() - 1;
     for (auto itr = (--v1.end()); itr != v1.begin(); itr--, pos--)
     {
         EXPECT_EQ(*itr, primes[pos]);
     }
-
-    std::cout << "just before the 2nd pre-incremement" << std::endl;
+    
     // Pre-increment
     pos = primes.size() - 1;
     for (auto itr = (--v1.end()); itr != v1.begin(); --itr, pos--)

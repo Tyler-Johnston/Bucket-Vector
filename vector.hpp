@@ -38,69 +38,51 @@ namespace usu
         public:
             using size_type = std::size_t;
             using reference = T&;
-            using pointer = std::shared_ptr<T[]>;
+            using pointer = std::shared_ptr<T>;
 
             class iterator 
             {
                 public:
                     using iterator_category = std::bidirectional_iterator_tag;
                     using difference_type = std::ptrdiff_t;
-                    using value_type = T;
-                    using pointer = T*;
-                    using reference = T&;
 
-                    // Constructor
-                    iterator(size_type globalIndex, vector<T>& vec)
-                    : m_globalIndex(globalIndex), m_vector(vec) {}
-
-                    // Dereferencing operator
-                    reference operator*() const {
-                        return m_vector[m_globalIndex];
+                    iterator() :
+                        iterator(nullptr)
+                    {
                     }
 
-                    // Arrow operator
-                    pointer operator->() const {
-                        return &m_vector[m_globalIndex];
+                    iterator(const iterator& obj) :
+                        m_pos(obj.m_pos),
+                        m_data(obj.m_data)
+                    {
                     }
 
-                    // Pre-increment operator
-                    iterator& operator++() {
-                        ++m_globalIndex;
-                        return *this;
+                    iterator(pointer data) :
+                        m_pos(0),
+                        m_data(data)
+                    {
                     }
 
-                    // Post-increment operator
-                    iterator operator++(int) {
-                        iterator temp = *this;
-                        ++(*this);
-                        return temp;
+                    iterator(size_type pos, vector<T>& data) : 
+                        m_pos(pos),
+                        m_data(data) 
+                    {
                     }
 
-                    // Pre-decrement operator
-                    iterator& operator--() {
-                        --m_globalIndex;
-                        return *this;
-                    }
+                    reference operator*() const { return m_data[m_pos]; }
+                    auto* operator->() const { return &m_data[m_pos]; }
 
-                    // Post-decrement operator
-                    iterator operator--(int) {
-                        iterator temp = *this;
-                        --(*this);
-                        return temp;
-                    }
+                    iterator& operator++();
+                    iterator operator++(int);
+                    iterator& operator--();
+                    iterator operator--(int);
 
-                    // Equality and inequality operators
-                    bool operator==(const iterator& other) const {
-                        return m_globalIndex == other.m_globalIndex;
-                    }
-
-                    bool operator!=(const iterator& other) const {
-                        return m_globalIndex != other.m_globalIndex;
-                    }
+                    bool operator==(const iterator& other) const { return m_pos == other.m_pos; }
+                    bool operator!=(const iterator& other) const { return m_pos != other.m_pos; }
 
                 private:
-                    size_type m_globalIndex;
-                    vector<T>& m_vector;
+                    size_type m_pos;
+                    vector<T>& m_data;
                 };
 
             vector();
@@ -131,25 +113,12 @@ namespace usu
                     std::uint16_t getSize() const { return m_bucketSize; }
                     std::uint16_t getCapacity() const { return m_bucketCapacity; }
                     void setSize(std::uint16_t newSize) { m_bucketSize = newSize; }
-                    void setValueAtIndex(std::uint16_t index, const T& value) 
-                    {
-                        if (index > m_bucketSize) {
-                            throw std::range_error("Index out of bounds in the SetValueAtIndex in the bucket");
-                        }
-                        m_bucketData[index] = value;
-                    }
-                    // print for viewing elements of bucket, for debugging purposes
-                    void print()
-                    {
-                        for (int i = 0; i < m_bucketSize; i++)
-                        {
-                            std::cout << m_bucketData[i] << std::endl;
-                        }
-                    }
-                    private:
-                        std::shared_ptr<T[]> m_bucketData;
-                        size_type m_bucketSize;
-                        size_type m_bucketCapacity;
+                    void setValueAtIndex(std::uint16_t index, const T& value);
+
+                private:
+                    std::shared_ptr<T[]> m_bucketData;
+                    size_type m_bucketSize;
+                    size_type m_bucketCapacity;
             };
             static const size_type DEFAULT_BUCKET_CAPACITY = 10;
             std::list<std::shared_ptr<Bucket>> buckets;
@@ -350,18 +319,6 @@ namespace usu
         m_size = 0;
     }
 
-    // template <typename T>
-    // typename vector<T>::iterator vector<T>::begin()
-    // {
-    //     return iterator(buckets, buckets.begin(), 0);
-    // }
-
-    // template <typename T>
-    // typename vector<T>::iterator vector<T>::end()
-    // {
-    //     return buckets.empty() ? iterator(buckets, buckets.end(), 0) : iterator(buckets, std::prev(buckets.end()), std::prev(buckets.end())->get()->getSize());
-    // }
-
     template <typename T>
     typename vector<T>::iterator vector<T>::begin() 
     {
@@ -374,5 +331,43 @@ namespace usu
         return iterator(m_size, *this);
     }
 
+    template <typename T>
+    typename vector<T>::iterator& vector<T>::iterator::operator++()
+    {
+        ++m_pos;
+        return *this;
+    }
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::iterator::operator++(int) 
+    {
+        iterator temp = *this;
+        ++(*this);
+        return temp;
+    }
+
+    template <typename T>
+    typename vector<T>::iterator& vector<T>::iterator::operator--() 
+    {
+        --m_pos;
+        return *this;
+    }
+
+    template <typename T>
+    typename vector<T>::iterator vector<T>::iterator::operator--(int) 
+    {
+        iterator temp = *this;
+        --(*this);
+        return temp;
+    }
+
+    template <typename T>
+    void vector<T>::Bucket::setValueAtIndex(std::uint16_t index, const T& value) 
+    {
+        if (index > m_bucketSize) {
+            throw std::range_error("Index out of bounds in the SetValueAtIndex in the bucket");
+        }
+        m_bucketData[index] = value;
+    }
 
 }
