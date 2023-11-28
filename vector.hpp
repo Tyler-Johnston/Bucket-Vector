@@ -177,29 +177,22 @@ namespace usu
         return (*bucketIt)->getData().get()[index];
     }
 
-
     template <typename T>
     void vector<T>::add(T value)
     {
         auto& lastBucket = buckets.back();
         if (lastBucket->getSize() == m_capacity) 
         {
-            auto firstHalfBucket = std::make_shared<Bucket>(m_capacity);
+            size_type mid = m_capacity / 2;
+            // set the size of the original 'lastBucket' to mid, so the remaining elements will be overridden
+            lastBucket->setSize(mid);
+            // copy the second half of the bucket to a new 'secondHalfBucket'
             auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
-
-            // copy first half to firstHalfBucket
-            std::copy(lastBucket->getData().get(), lastBucket->getData().get() + m_capacity / 2, firstHalfBucket->getData().get());
-            // copy second half to secondHalfBucket
-            std::copy(lastBucket->getData().get() + m_capacity / 2, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
-            // adjust the sizes
-            firstHalfBucket->setSize(m_capacity / 2);
-            secondHalfBucket->setSize((m_capacity / 2) + 1); // this is +1 because the new element will be added to the secondHalfBucket
-            // remove the old lastBucket and add the two new buckets
-            buckets.pop_back();
-            buckets.push_back(firstHalfBucket);
+            std::copy(lastBucket->getData().get() + mid, lastBucket->getData().get() + m_capacity, secondHalfBucket->getData().get());
+            secondHalfBucket->setSize(mid + 1);
+            // add new element to secondHalfBucket and append bucket to list of buckets
+            secondHalfBucket->setValueAtIndex(mid, value);
             buckets.push_back(secondHalfBucket);
-            // add the new value to the end of the secondHalfBucket
-            secondHalfBucket->setValueAtIndex(m_capacity / 2, value);
         } 
         else 
         {
@@ -228,15 +221,14 @@ namespace usu
             {
                 if (bucketSize == m_capacity) 
                 {
-                    auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
                     size_type mid = m_capacity / 2;
-
-                    // move the second half of the elements to the secondHalfBucket
-                    std::copy((*bucketIt)->getData().get() + mid, (*bucketIt)->getData().get() + m_capacity, secondHalfBucket->getData().get());
-                    secondHalfBucket->setSize(mid);
-
                     // adjust the size of the original bucket
                     (*bucketIt)->setSize(mid);
+
+                    // move the second half of the elements to the secondHalfBucket
+                    auto secondHalfBucket = std::make_shared<Bucket>(m_capacity);
+                    std::copy((*bucketIt)->getData().get() + mid, (*bucketIt)->getData().get() + m_capacity, secondHalfBucket->getData().get());
+                    secondHalfBucket->setSize(mid);
 
                     // determine if the new value should be inserted in the orignal (first) bucket or the second bucket
                     if (index - count < mid) 
@@ -258,10 +250,8 @@ namespace usu
                         secondHalfBucket->getData().get()[newIndex] = value;
                         secondHalfBucket->setSize(mid + 1);
                     }
-
+                    // insert the new bucket after the bucket iterator
                     buckets.insert(std::next(bucketIt), secondHalfBucket);
-                    m_size++;
-                    inserted = true;
                 } 
                 else 
                 {
@@ -272,9 +262,9 @@ namespace usu
                     }
                     (*bucketIt)->setValueAtIndex(index - count, value);
                     (*bucketIt)->setSize(bucketSize + 1);
-                    m_size++;
-                    inserted = true;
                 }
+                m_size++;
+                inserted = true;
             }
             count += bucketSize;
             ++bucketIt;
@@ -293,6 +283,7 @@ namespace usu
         {
             throw std::range_error("Index out of range");
         }
+
         // find the correct bucket
         auto bucketIt = buckets.begin();
         while (bucketIt != buckets.end() && index >= (*bucketIt)->getSize()) 
@@ -300,10 +291,12 @@ namespace usu
             index -= (*bucketIt)->getSize();
             ++bucketIt;
         }
+
         if (bucketIt == buckets.end()) 
         {
             throw std::range_error("Element to remove not found");
         }
+        
         // shift elements left to fill the gap
         for (size_type i = index; i < (*bucketIt)->getSize() - 1; ++i) 
         {
