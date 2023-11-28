@@ -40,7 +40,7 @@ namespace usu
             using reference = T&;
             using pointer = std::shared_ptr<T[]>;
 
-            class iterator 
+            class iterator
             {
                 public:
                     using iterator_category = std::bidirectional_iterator_tag;
@@ -63,9 +63,9 @@ namespace usu
                     {
                     }
 
-                    iterator(size_type pos, vector<T>& data) : 
+                    iterator(size_type pos, vector<T>& data) :
                         m_pos(pos),
-                        m_data(data) 
+                        m_data(data)
                     {
                     }
 
@@ -101,12 +101,12 @@ namespace usu
             iterator end() { return iterator(m_size, *this); }
 
         private:
-            class Bucket 
+            class Bucket
             {
                 public:
-                    Bucket(std::uint16_t capacity) 
+                    Bucket(size_type capacity)
                     {
-                        if (capacity % 2 != 0) 
+                        if (capacity % 2 != 0)
                         {
                             throw std::invalid_argument("Bucket capacity must be an even number");
                         }
@@ -114,12 +114,12 @@ namespace usu
                         m_bucketCapacity = capacity;
                         m_bucketSize = 0;
                     }
-                    
+                   
                     const std::shared_ptr<T[]>& getData() const { return m_bucketData; }
-                    std::uint16_t getSize() const { return m_bucketSize; }
-                    std::uint16_t getCapacity() const { return m_bucketCapacity; }
-                    void setSize(std::uint16_t newSize) { m_bucketSize = newSize; }
-                    void setValueAtIndex(std::uint16_t index, const T& value);
+                    size_type getSize() const { return m_bucketSize; }
+                    size_type getCapacity() const { return m_bucketCapacity; }
+                    void setSize(size_type newSize) { m_bucketSize = newSize; }
+                    void setValueAtIndex(size_type index, const T& value);
 
                 private:
                     std::shared_ptr<T[]> m_bucketData;
@@ -148,28 +148,28 @@ namespace usu
     {
         auto initialBucket = std::make_shared<Bucket>(m_capacity);
         buckets.push_back(initialBucket);
-        for (const auto& value : list) 
+        for (const auto& value : list)
         {
             add(value);
         }
     }
 
     template <typename T>
-    typename vector<T>::reference vector<T>::operator[](size_type index) 
+    typename vector<T>::reference vector<T>::operator[](size_type index)
     {
-        if (index >= m_size) 
+        if (index >= m_size)
         {
             throw std::range_error("Index out of bounds");
         }
 
         auto bucketIt = buckets.begin();
-        while (bucketIt != buckets.end() && index >= (*bucketIt)->getSize()) 
+        while (bucketIt != buckets.end() && index >= (*bucketIt)->getSize())
         {
             index -= (*bucketIt)->getSize();
             ++bucketIt;
         }
 
-        if (bucketIt == buckets.end()) 
+        if (bucketIt == buckets.end())
         {
             throw std::range_error("Index out of bounds");
         }
@@ -181,7 +181,7 @@ namespace usu
     void vector<T>::add(T value)
     {
         auto& lastBucket = buckets.back();
-        if (lastBucket->getSize() == m_capacity) 
+        if (lastBucket->getSize() == m_capacity)
         {
             size_type mid = m_capacity / 2;
             // set the size of the original 'lastBucket' to mid, so the remaining elements will be overridden
@@ -193,8 +193,8 @@ namespace usu
             // add new element to secondHalfBucket and append bucket to list of buckets
             secondHalfBucket->setValueAtIndex(mid, value);
             buckets.push_back(secondHalfBucket);
-        } 
-        else 
+        }
+        else
         {
             size_type currentSize = lastBucket->getSize();
             lastBucket->setValueAtIndex(currentSize, value);
@@ -204,9 +204,9 @@ namespace usu
     }
 
     template <typename T>
-    void vector<T>::insert(size_type index, T value) 
+    void vector<T>::insert(size_type index, T value)
     {
-        if (index > m_size) 
+        if (index > m_size)
         {
             throw std::range_error("Invalid insert index");
         }
@@ -214,12 +214,12 @@ namespace usu
         bool inserted = false;
         auto bucketIt = buckets.begin();
         size_type count = 0;
-        while (bucketIt != buckets.end() && !inserted) 
+        while (bucketIt != buckets.end() && !inserted)
         {
             size_type bucketSize = (*bucketIt)->getSize();
-            if (index <= count + bucketSize) 
+            if (index <= count + bucketSize)
             {
-                if (bucketSize == m_capacity) 
+                if (bucketSize == m_capacity)
                 {
                     size_type mid = m_capacity / 2;
                     // adjust the size of the original bucket
@@ -231,19 +231,19 @@ namespace usu
                     secondHalfBucket->setSize(mid);
 
                     // determine if the new value should be inserted in the orignal (first) bucket or the second bucket
-                    if (index - count < mid) 
+                    if (index - count < mid)
                     {
-                        for (size_type i = mid; i > index - count; --i) 
+                        for (size_type i = mid; i > index - count; --i)
                         {
                             (*bucketIt)->getData().get()[i] = (*bucketIt)->getData().get()[i - 1];
                         }
                         (*bucketIt)->getData().get()[index - count] = value;
                         (*bucketIt)->setSize(mid + 1);
-                    } 
-                    else 
+                    }
+                    else
                     {
                         size_type newIndex = index - count - mid;
-                        for (size_type i = (m_capacity - mid); i > newIndex; --i) 
+                        for (size_type i = (m_capacity - mid); i > newIndex; --i)
                         {
                             secondHalfBucket->getData().get()[i] = secondHalfBucket->getData().get()[i - 1];
                         }
@@ -252,11 +252,11 @@ namespace usu
                     }
                     // insert the new bucket after the bucket iterator
                     buckets.insert(std::next(bucketIt), secondHalfBucket);
-                } 
-                else 
+                }
+                else
                 {
                     // handle the case where the bucket is not full
-                    for (size_type i = bucketSize; i > index - count; --i) 
+                    for (size_type i = bucketSize; i > index - count; --i)
                     {
                         (*bucketIt)->setValueAtIndex(i, (*bucketIt)->getData()[i - 1]);
                     }
@@ -270,35 +270,35 @@ namespace usu
             ++bucketIt;
         }
 
-        if (!inserted) 
+        if (!inserted)
         {
             throw std::range_error("Index out of bounds");
         }
     }
 
     template <typename T>
-    void vector<T>::remove(size_type index) 
+    void vector<T>::remove(size_type index)
     {
-        if (index >= m_size) 
+        if (index >= m_size)
         {
             throw std::range_error("Index out of range");
         }
 
         // find the correct bucket
         auto bucketIt = buckets.begin();
-        while (bucketIt != buckets.end() && index >= (*bucketIt)->getSize()) 
+        while (bucketIt != buckets.end() && index >= (*bucketIt)->getSize())
         {
             index -= (*bucketIt)->getSize();
             ++bucketIt;
         }
 
-        if (bucketIt == buckets.end()) 
+        if (bucketIt == buckets.end())
         {
             throw std::range_error("Element to remove not found");
         }
-        
+       
         // shift elements left to fill the gap
-        for (size_type i = index; i < (*bucketIt)->getSize() - 1; ++i) 
+        for (size_type i = index; i < (*bucketIt)->getSize() - 1; ++i)
         {
             (*bucketIt)->setValueAtIndex(i, (*bucketIt)->getData()[i + 1]);
         }
@@ -322,7 +322,7 @@ namespace usu
     }
 
     template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator++(int) 
+    typename vector<T>::iterator vector<T>::iterator::operator++(int)
     {
         iterator temp = *this;
         ++(*this);
@@ -330,14 +330,14 @@ namespace usu
     }
 
     template <typename T>
-    typename vector<T>::iterator& vector<T>::iterator::operator--() 
+    typename vector<T>::iterator& vector<T>::iterator::operator--()
     {
         --m_pos;
         return *this;
     }
 
     template <typename T>
-    typename vector<T>::iterator vector<T>::iterator::operator--(int) 
+    typename vector<T>::iterator vector<T>::iterator::operator--(int)
     {
         iterator temp = *this;
         --(*this);
@@ -345,13 +345,12 @@ namespace usu
     }
 
     template <typename T>
-    void vector<T>::Bucket::setValueAtIndex(std::uint16_t index, const T& value) 
+    void vector<T>::Bucket::setValueAtIndex(size_type index, const T& value)
     {
-        if (index > m_bucketSize) 
+        if (index > m_bucketSize)
         {
             throw std::range_error("Index out of bounds");
         }
         m_bucketData[index] = value;
     }
-
 }
