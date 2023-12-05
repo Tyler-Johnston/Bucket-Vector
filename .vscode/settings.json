@@ -66,6 +66,17 @@
         "map": "cpp",
         "set": "cpp",
         "unordered_set": "cpp",
-        "__tuple": "cpp"
+        "__tuple": "cpp",
+        "__std_stream": "cpp",
+        "any": "cpp",
+        "bit": "cpp",
+        "complex": "cpp",
+        "format": "cpp",
+        "fstream": "cpp",
+        "iomanip": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "thread": "cpp",
+        "typeindex": "cpp"
     }
 }

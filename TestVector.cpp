@@ -457,3 +457,21 @@ TEST(Modify, Remove)
         EXPECT_EQ(true, true);
     }
 }
+
+TEST(Constructor, SizeCapacity)
+{
+    // 10 comes from a private constant in the usu::vector class: DEFAULT_INITIAL_CAPACITY
+    usu::vector<int> v1;
+    EXPECT_EQ(v1.size(), 0);
+    EXPECT_EQ(v1.capacity(), 10);
+
+    usu::vector<int> v2(2);
+    EXPECT_EQ(v2.size(), 2);
+    EXPECT_EQ(v2.capacity(), 10);
+
+    // no resizing mehthods
+    // // Default capacity increase is 2 * size
+    // usu::vector<int> v3(100);
+    // EXPECT_EQ(v3.size(), 100);
+    // EXPECT_EQ(v3.capacity(), 200);
+}
