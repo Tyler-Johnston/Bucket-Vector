@@ -26,13 +26,13 @@ int main()
 
     // Simple vector construction
     usu::vector<int> v1;
-    // usu::vector<int> v2(20);
+    usu::vector<int> v2(20);
     usu::vector v3{ 1, 2, 3, 5, 7, 11 };
 
     std::cout << "\n-- v1 --\n";
     report(v1);
 
-    // std::cout << "\n-- v2 --\n";
+    std::cout << "\n-- v2 --\n";
     // report(v2);
 
     std::cout << "\n-- v3 --\n";

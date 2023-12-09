@@ -96,7 +96,7 @@ namespace usu
             void clear();
 
             size_type size() const { return m_size; }
-            size_type capacity() const { return BucketCapacity; }
+            size_type capacity() const { return m_capacity; }
 
             iterator begin() { return iterator(0, *this); }
             iterator end() { return iterator(m_size, *this); }
@@ -122,6 +122,7 @@ namespace usu
             };
             std::list<std::shared_ptr<Bucket>> buckets;
             size_type m_size; // the number of elements in the vector (NOT the number of buckets)
+            size_type m_capacity = BucketCapacity; // the total capacity of the vector, including all bucket space
     };
 
     template <typename T, std::size_t BucketCapacity>
@@ -132,13 +133,20 @@ namespace usu
         buckets.push_back(initialBucket);
     }
 
+
     template <typename T, std::size_t BucketCapacity>
     vector<T, BucketCapacity>::vector(size_type size) :
-        m_size(size)
+        m_size(size), m_capacity(0)
     {
-        auto initialBucket = std::make_shared<Bucket>();
-        buckets.push_back(initialBucket);
+        size_type numberOfBuckets = (size + BucketCapacity - 1) / BucketCapacity;
+
+        for (size_type i = 0; i < numberOfBuckets; ++i) {
+            auto bucket = std::make_shared<Bucket>();
+            buckets.push_back(bucket);
+            m_capacity += BucketCapacity;
+        }
     }
+
 
     template <typename T, std::size_t BucketCapacity>
     vector<T, BucketCapacity>::vector(std::initializer_list<T> list) :
@@ -157,7 +165,7 @@ namespace usu
     {
         if (index >= m_size)
         {
-            throw std::range_error("Index out of bounds");
+            throw std::range_error("Index out of bounds (1)");
         }
 
         auto bucketIt = buckets.begin();
@@ -169,11 +177,12 @@ namespace usu
 
         if (bucketIt == buckets.end())
         {
-            throw std::range_error("Index out of bounds");
+            throw std::range_error("Index out of bounds (2)");
         }
 
         return (*bucketIt)->getData().get()[index];
     }
+
 
     template <typename T, std::size_t BucketCapacity>
     void vector<T, BucketCapacity>::add(T value)
@@ -191,6 +200,7 @@ namespace usu
             // add new element to secondHalfBucket and append bucket to list of buckets
             secondHalfBucket->setValueAtIndex(mid, value);
             buckets.push_back(secondHalfBucket);
+            m_capacity += BucketCapacity;
         }
         else
         {
@@ -250,6 +260,7 @@ namespace usu
                     }
                     // insert the new bucket after the bucket iterator
                     buckets.insert(std::next(bucketIt), secondHalfBucket);
+                    m_capacity += BucketCapacity;
                 }
                 else
                 {
