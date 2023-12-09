@@ -94,6 +94,7 @@ namespace usu
             void insert(size_type index, T value);
             void remove(size_type index);
             void clear();
+            void map(std::function<void(T&)> func);
 
             size_type size() const { return m_size; }
             size_type capacity() const { return m_capacity; }
@@ -135,13 +136,15 @@ namespace usu
 
     template <typename T, std::size_t BucketCapacity>
     vector<T, BucketCapacity>::vector(size_type size) :
-        m_size(size), m_capacity(0)
+        m_size(size),
+        m_capacity(0)
     {
         size_type numberOfBuckets = (size + BucketCapacity - 1) / BucketCapacity;
 
-        for (size_type i = 0; i < numberOfBuckets; ++i) {
+        for (size_type i = 0; i < numberOfBuckets; ++i) 
+        {
             auto bucket = std::make_shared<Bucket>();
-            bucket->setSize(BucketCapacity); // not sure if this is what we want, as it will fill the buckets with zeros
+            bucket->setSize(BucketCapacity);
             buckets.push_back(bucket);
             m_capacity += BucketCapacity;
         }
@@ -164,7 +167,7 @@ namespace usu
     {
         if (index >= m_size)
         {
-            throw std::range_error("Index out of bounds (1)");
+            throw std::range_error("Index out of bounds");
         }
 
         auto bucketIt = buckets.begin();
@@ -176,7 +179,7 @@ namespace usu
 
         if (bucketIt == buckets.end())
         {
-            throw std::range_error("Index out of bounds (2)");
+            throw std::range_error("Index out of bounds");
         }
 
         return (*bucketIt)->getData().get()[index];
@@ -320,6 +323,20 @@ namespace usu
         buckets.clear();
         m_size = 0;
     }
+
+    template <typename T, std::size_t BucketCapacity>
+    void usu::vector<T, BucketCapacity>::map(std::function<void(T&)> func) 
+    {
+        for (auto& bucket : buckets) 
+        {
+            for (size_type i = 0; i < bucket->getSize(); ++i) 
+            {
+                func(bucket->getData().get()[i]);
+            }
+        }
+    }
+
+
 
     template <typename T, std::size_t BucketCapacity>
     typename vector<T, BucketCapacity>::iterator& vector<T, BucketCapacity>::iterator::operator++()
