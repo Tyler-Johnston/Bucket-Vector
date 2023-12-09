@@ -336,8 +336,6 @@ namespace usu
         }
     }
 
-
-
     template <typename T, std::size_t BucketCapacity>
     typename vector<T, BucketCapacity>::iterator& vector<T, BucketCapacity>::iterator::operator++()
     {

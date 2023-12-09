@@ -95,23 +95,23 @@ void demonstrateCapacity(usu::vector<T>& v1, usu::vector<E>& v2)
 template <typename T>
 void demonstrateIteration(usu::vector<T>& v)
 {
-    std::cout << "\nDemonstrate Iteration\n" << std::endl;
+    std::cout << "\nDemonstrate Iteration" << std::endl;
 
-    std::cout << "Postfix: ";
+    std::cout << "\n-- postfix --" << std::endl;
     for (auto i{ v.begin() }; i != v.end(); i++)
     {
         std::cout << *i << ", ";
     }
     std::cout << std::endl;
 
-    std::cout << "Prefix: ";
+    std::cout << "\n-- prefix --" << std::endl;
     for (auto i{ v.begin() }; i != v.end(); ++i)
     {
         std::cout << *i << ", ";
     }
     std::cout << std::endl;
 
-    std::cout << "Decrement: \n";
+    std::cout << "\n-- decrement --" << std::endl;
     auto j{ v.begin() };
     ++j;
     ++j;
@@ -121,7 +121,7 @@ void demonstrateIteration(usu::vector<T>& v)
     j--;
     std::cout << *j << std::endl;
 
-    std::cout << "For-Each iteration: ";
+    std::cout << "\n-- for each --" << std::endl;
     for (auto&& value : v)
     {
         std::cout << value << ", ";
@@ -134,7 +134,7 @@ void demonstrateMapping(usu::vector<T>& v, std::function<void(T&)> func)
 {
     std::cout << "\nDemonstrate Mapping" << std::endl;
 
-    std::cout << "\n-- initial values --\n";
+    std::cout << "\n-- initial values -- " << std::endl;
     report(v);
     std::cout << "\n-- applying lambda -- " << std::endl;
     v.map(func);
@@ -149,6 +149,7 @@ int main()
     usu::vector<std::string> v4{ "one", "two", "three", "five", "seven", "eleven" };
     usu::vector v5{ 1.1, 2.2, 3.3, 5.5, 7.7, 11.1 };
 
+    // test default / size / initializer list constructors
     demonstrateConstruction(v1, v2, v3);
 
     // test adding/inserting/removing on int, string, and float types
@@ -167,8 +168,5 @@ int main()
     demonstrateMapping<int>(v3, [](int& x) { x = x * x; });
     demonstrateMapping<std::string>(v4, [](std::string& str) { str += " - modified"; });
 
-
-
-    
     return 0;
 }
