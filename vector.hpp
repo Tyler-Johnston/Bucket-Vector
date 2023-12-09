@@ -133,7 +133,6 @@ namespace usu
         buckets.push_back(initialBucket);
     }
 
-
     template <typename T, std::size_t BucketCapacity>
     vector<T, BucketCapacity>::vector(size_type size) :
         m_size(size), m_capacity(0)
@@ -142,11 +141,11 @@ namespace usu
 
         for (size_type i = 0; i < numberOfBuckets; ++i) {
             auto bucket = std::make_shared<Bucket>();
+            bucket->setSize(BucketCapacity); // not sure if this is what we want, as it will fill the buckets with zeros
             buckets.push_back(bucket);
             m_capacity += BucketCapacity;
         }
     }
-
 
     template <typename T, std::size_t BucketCapacity>
     vector<T, BucketCapacity>::vector(std::initializer_list<T> list) :
@@ -182,7 +181,6 @@ namespace usu
 
         return (*bucketIt)->getData().get()[index];
     }
-
 
     template <typename T, std::size_t BucketCapacity>
     void vector<T, BucketCapacity>::add(T value)

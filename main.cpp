@@ -33,7 +33,7 @@ int main()
     report(v1);
 
     std::cout << "\n-- v2 --\n";
-    // report(v2);
+    report(v2);
 
     std::cout << "\n-- v3 --\n";
     report(v3);
